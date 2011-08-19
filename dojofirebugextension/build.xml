@@ -1,18 +1,20 @@
 <?xml version="1.0"?>
-<project name="dojofirebugextension" default="xpi" basedir=".">
+<project name="dojofirebugextension" default="release" basedir=".">
 
 	<property name="dist.dir" value="dist/" />
 	<property name="build.dir" value="build/" />
 	<property file="version.properties" />
-
-	<target name="xpi" depends="prepare" description="zip files into firefox XPI">
+	
+	<property name="xpi.filename" value="${ant.project.name}-${VERSION}${RELEASE}.xpi" />	
+	
+	<target name="xpi" description="zip files into firefox XPI">
 		<mkdir dir="${dist.dir}" />
 		<mkdir dir="${dist.dir}/${FBUG_VERSION}" />
 
-		<zip destfile="${dist.dir}/${FBUG_VERSION}/${ant.project.name}-${VERSION}${RELEASE}.xpi" basedir="${build.dir}" includes="**/*" />
+		<zip destfile="${dist.dir}/${FBUG_VERSION}/${xpi.filename}" basedir="${build.dir}" includes="**/*" />
 		
         <checksum
-            file="${dist.dir}/${FBUG_VERSION}/${ant.project.name}-${VERSION}${RELEASE}.xpi"
+            file="${dist.dir}/${FBUG_VERSION}/${xpi.filename}"
             property="updateHash"
             algorithm="SHA-1"/>
 
@@ -47,18 +49,6 @@
 				</replacetokens>
 			</filterchain>
 		</copy>
-<!--
-		<copy file="update.rdf" tofile="${dist.dir}/update.rdf" overwrite="true">
-			<filterchain>
-				<replacetokens>
-					<token key="VERSION" value="${VERSION}" />
-					<token key="RELEASE" value="${RELEASE}" />
-					<token key="FBUG_VERSION" value="${FBUG_VERSION}" />
-					<token key="UPDATEHASH" value="${updateHash}"/>
-				</replacetokens>
-			</filterchain>
-		</copy>
--->
 		
 		<copy file="chrome.manifest" tofile="${build.dir}/chrome.manifest" overwrite="true">
 		</copy>
@@ -67,16 +57,43 @@
 		</copy>
 
 		<copy todir="${build.dir}">
-			<fileset dir="${basedir}" includes="content/**/*" excludes="content/**/Thumbs.db" />			
+			<fileset dir="${basedir}" includes="content/**/*" excludes="content/**/Thumbs.db, content/fbtest/" />			
 			<fileset dir="${basedir}" includes="defaults/**/*" excludes="default/**/Thumbs.db" />
 			<fileset dir="${basedir}" includes="locale/**/*" excludes="locale/**/Thumbs.db" />
 			<fileset dir="${basedir}" includes="skin/**/*" excludes="skin/**/Thumbs.db" />
 		</copy>
+		
+        <!-- Remove unnecessary *.xml files in the root directory (like e.g. this build file),
+            but not from sub directories. -->
+        <delete dir="${build.dir}" includes="build.xml" />
+
 	</target>
 
 	<target name="clean">
 		<delete dir="${build.dir}" />
 		<delete dir="${dist.dir}" />
 	</target>
+
+    <!-- Remove update URL, this is necessary for AMO -->
+    <target name="disableUpdate">
+    	<echo message="Disabling update in ${build.dir}/install.rdf file"/>
+        <replaceregexp file="${build.dir}/install.rdf"
+            match="em:updateURL=(.*)https://getfirebug.com/releases/dojofirebugextension/${FBUG_VERSION}/update.rdf(.*)"
+            replace=""/>
+    </target>
+
+    <!-- Build AMO Release -->
+    <target name="release-amo" depends="prepare">
+        <antcall target="disableUpdate" />
+        <antcall target="xpi">
+        	<param name="xpi.filename" value="${ant.project.name}-${VERSION}${RELEASE}-amo.xpi"/>
+       	</antcall>
+    </target>
+
+    <!-- Build AMO Release -->
+    <target name="release" depends="prepare">
+        <antcall target="xpi"/>
+    </target>
+
 
 </project>
