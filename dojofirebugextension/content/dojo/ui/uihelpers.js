@@ -25,7 +25,7 @@ const nsISelectionDisplay = Ci.nsISelectionDisplay;
 const nsISelectionController = Ci.nsISelectionController;
 
 //the name of our strings bundle
-var DOJO_BUNDLE = "dojostrings";    
+var DOJO_BUNDLE = "fbDojo_dojostrings";    
 var DOJO_EXT_CSS_URL = "chrome://dojofirebugextension/skin/dojofirebugextension.css";
     
 //  //are we on top of FF4?

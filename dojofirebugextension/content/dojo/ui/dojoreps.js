@@ -34,7 +34,7 @@ with(Domplate) {
 var DojoReps = {};
 
 //FIXME XXXpreyna need to use the UI.DOJO_BUNDLE constant. Cannot do it now, because of a circular dependency.
-var DOJO_BUNDLE = "dojostrings";    
+var DOJO_BUNDLE = "fbDojo_dojostrings";    
     
 //****************************************************************
 // GENERAL FUNCTIONS

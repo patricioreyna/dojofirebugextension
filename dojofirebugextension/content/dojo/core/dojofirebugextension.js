@@ -117,7 +117,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     },
     
     _onContentAreaContextMenuShowing: function(event) {
-        var inspectItem = document.getElementById("menu_dojofirebugextension_inspect");
+        var inspectItem = document.getElementById("fbDojo_menu_dojofirebugextension_inspect");
 
         var elt = document.popupNode;
         var context = Firebug.TabWatcher.getContextByWindow(elt.ownerDocument.defaultView);
@@ -237,7 +237,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
             return;
         }
         
-        var dojofirebugextensionButtons = browser.chrome.$("fbdojofirebugextensionButtons");
+        var dojofirebugextensionButtons = browser.chrome.$("fbDojo_firebugextensionButtons");
         if(dojofirebugextensionButtons) {
             Dom.collapse(dojofirebugextensionButtons, !isdojofirebugextensionPanel);
         }

@@ -411,19 +411,19 @@
 	display: none;
 } 
 
-#dojoFilter-boxes {
+#fbDojo_dojoFilter-boxes {
 	display: none;
 }
 
-#dojoConnFromIndexBox {
+#fbDojo_dojoConnFromIndexBox {
 	width: 50px;
 }
 
-#dojoConnCountBox {
+#fbDojo_dojoConnCountBox {
 	width: 50px;
 }
 
-#dojoConnFilterBox {
+#fbDojo_dojoConnFilterBox {
     margin-left: 0;
     margin-right: 6px;
     width: 100% !important;
@@ -447,7 +447,7 @@ textbox[type="dojoConnFilterBox"] {
 /* Firefox context menu */
 
 
-#menu_dojofirebugextension_inspect {
+#fbDojo_menu_dojofirebugextension_inspect {
     /*list-style-image: url(chrome://dojofirebugextension/skin/dojo-logo-icon.png);*/
     list-style-image: url(chrome://dojofirebugextension/skin/logo-icon-2.png);
 }

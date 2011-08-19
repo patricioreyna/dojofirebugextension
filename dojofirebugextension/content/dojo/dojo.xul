@@ -26,12 +26,12 @@
  -->
 
     <stringbundleset id="stringbundleset">
-    	<stringbundle id="dojostrings" src="chrome://dojofirebugextension/locale/dojo.properties"/>
+    	<stringbundle id="fbDojo_dojostrings" src="chrome://dojofirebugextension/locale/dojo.properties"/>
 	</stringbundleset>
 
     <!-- Firefox page context menu -->
     <menupopup id="contentAreaContextMenu">
-        <menuitem id="menu_dojofirebugextension_inspect" insertafter="menu_firebugInspect" label="&window.contextmenuitem.inspect;"
+        <menuitem id="fbDojo_menu_dojofirebugextension_inspect" insertafter="menu_firebugInspect" label="&window.contextmenuitem.inspect;"
                   command="cmd_dojofirebugextension_inspect" class="menuitem-iconic fbInternational" />
     </menupopup>    
 
@@ -44,44 +44,44 @@
 
 	<toolbar id="fbToolbar" align="center" role="toolbar">
         <hbox id="fbToolbarInner" insertbefore="fbDetachButton" flex="1" align="center">
-            <hbox id="fbdojofirebugextensionButtons" insertafter="fbNetButtons">
+            <hbox id="fbDojo_firebugextensionButtons" insertafter="fbNetButtons">
                 <!-- <toolbarseparator/> -->
-                <toolbarbutton id="widgetsButton"
+                <toolbarbutton id="fbDojo_widgetsButton"
                     label="&dojo.widgets.label;" class="toolbar-text-button"
                     type="radio" group="dojoOptions" checked="true" 
                     tooltiptext="&dojo.widgets.tooltip;" command="cmd_dojofirebugextensionGetDojoWidgetButton"/>
-                <toolbarbutton id="connectionsInTableButton"
+                <toolbarbutton id="fbDojo_connectionsInTableButton"
                     label="&dojo.connections.label;" class="toolbar-text-button"
                     type="radio" group="dojoOptions" 
                     tooltiptext="&dojo.connections.tooltip;" command="cmd_dojofirebugextensionViewConnectionsInTable"/>
-                <toolbarbutton id="subscriptionsButton"
+                <toolbarbutton id="fbDojo_subscriptionsButton"
                     label="&dojo.subscriptions.label;" class="toolbar-text-button"
                     type="radio" group="dojoOptions" 
                     tooltiptext="&dojo.subscriptions.tooltip;" command="cmd_dojofirebugextensionViewSubscriptions"/>
 
-				<span id="dojoFilter-boxes">
+				<span id="fbDojo_dojoFilter-boxes">
 	                <!-- from box -->
 	                [Begin:
 	                <vbox flex="40">
 	                    <spacer flex="1"/>
-	                    <textbox id="dojoConnFromIndexBox" type="dojoConnFromIndexBox" value="0"/>
+	                    <textbox id="fbDojo_dojoConnFromIndexBox" type="dojoConnFromIndexBox" value="0"/>
 	                    <spacer flex="1"/>
 	                </vbox>
 	                End:
 	                <!-- count Box -->                					
 	                <vbox flex="40">
 	                    <spacer flex="1"/>
-	                    <textbox id="dojoConnCountBox" type="dojoConnCountBox" value="50"/>
+	                    <textbox id="fbDojo_dojoConnCountBox" type="dojoConnCountBox" value="50"/>
 	                    <spacer flex="1"/>
 	                </vbox>           	                	
 	                <!-- query Box -->
 	                Filter:
 	                <vbox flex="40">
 	                    <spacer flex="1"/>
-	                    <textbox id="dojoConnFilterBox" type="dojoConnFilterBox"/>
+	                    <textbox id="fbDojo_dojoConnFilterBox" type="dojoConnFilterBox"/>
 	                    <spacer flex="1"/>
 	                </vbox>
-	                <button id="dojoApplyFilterButton" label="Apply"
+	                <button id="fbDojo_dojoApplyFilterButton" label="Apply"
 	                	command="cmd_dojofirebugextensionViewConnectionsInTable"/>
 					]
 

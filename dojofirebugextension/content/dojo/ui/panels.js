@@ -786,10 +786,10 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
         ctx.dojo.mainMenuSelectedOption = option;
         
         var doc = this.panelNode.document;
-        Firebug.chrome.$("widgetsButton", doc).checked = (option == SHOW_WIDGETS);
-        Firebug.chrome.$("connectionsInTableButton", doc).checked = (option == SHOW_CONNECTIONS_TABLE);
-        Firebug.chrome.$("dojoFilter-boxes", doc).style.display = UI.getVisibilityValue(option == SHOW_CONNECTIONS_TABLE);
-        Firebug.chrome.$("subscriptionsButton", doc).checked = (option == SHOW_SUBSCRIPTIONS);
+        Firebug.chrome.$("fbDojo_widgetsButton", doc).checked = (option == SHOW_WIDGETS);
+        Firebug.chrome.$("fbDojo_connectionsInTableButton", doc).checked = (option == SHOW_CONNECTIONS_TABLE);
+        Firebug.chrome.$("fbDojo_dojoFilter-boxes", doc).style.display = UI.getVisibilityValue(option == SHOW_CONNECTIONS_TABLE);
+        Firebug.chrome.$("fbDojo_subscriptionsButton", doc).checked = (option == SHOW_SUBSCRIPTIONS);
     },
         
     /**
@@ -986,9 +986,9 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
     /*obj|undefined if not valid*/_createConnectionsFilter: function(context) {
         
         //FIXME add somekind of validation
-        var count = parseInt(Firebug.chrome.$("dojoConnCountBox").value, 10);
-        var fromIndex = parseInt(Firebug.chrome.$("dojoConnFromIndexBox").value, 10);
-        var query = Firebug.chrome.$("dojoConnFilterBox").value;
+        var count = parseInt(Firebug.chrome.$("fbDojo_dojoConnCountBox").value, 10);
+        var fromIndex = parseInt(Firebug.chrome.$("fbDojo_dojoConnFromIndexBox").value, 10);
+        var query = Firebug.chrome.$("fbDojo_dojoConnFilterBox").value;
         
         if(!count || isNaN(count)) {
             count = undefined;
@@ -1081,11 +1081,11 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
         var filteringCriteria = this._createConnectionsFilter(context);
         if(!filteringCriteria) {
             //parsing ended in error . Notify user and exit...
-            Css.setClass(Firebug.chrome.$("dojoConnFilterBox"), "dojoConnFilterBox-attention");
+            Css.setClass(Firebug.chrome.$("fbDojo_dojoConnFilterBox"), "dojoConnFilterBox-attention");
             return;
         }
 
-        Css.removeClass(Firebug.chrome.$("dojoConnFilterBox"), "dojoConnFilterBox-attention");
+        Css.removeClass(Firebug.chrome.$("fbDojo_dojoConnFilterBox"), "dojoConnFilterBox-attention");
         
         var formatters = this._initFormatters();
         
