@@ -16,10 +16,10 @@
 define([
         "firebug/lib/object",
         "firebug/lib/trace",
+        "dojo/core/proxies",
         "dojo/lib/collections",
-        "dojo/lib/filtering",
-        "dojo/lib/utils"
-       ], function dojoModelFactory(Obj, FBTrace, Collections, DojoFilter, DojoUtils)
+        "dojo/lib/filtering"
+       ], function dojoModelFactory(Obj, FBTrace, DojoProxies, Collections, DojoFilter)
 {
     
     var DojoModel = {};
@@ -825,7 +825,7 @@ define([
              },
 
              _getOriginalFunctionIfNeeded : function(fn) {
-                 return DojoUtils.getDojoProxiedFunctionIfNeeded(fn); 
+                 return DojoProxies.getDojoProxiedFunctionIfNeeded(fn); 
              }    
      };
      
@@ -863,7 +863,7 @@ define([
          },
          
          getEventFunction: function() {
-            return DojoUtils.getDojoProxiedFunctionIfNeeded(this.originalFunction);
+            return DojoProxies.getDojoProxiedFunctionIfNeeded(this.originalFunction);
          }         
      });
      

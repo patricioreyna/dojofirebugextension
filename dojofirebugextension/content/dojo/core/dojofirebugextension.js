@@ -91,6 +91,7 @@ define([
  */
 DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
 {
+    dispatchName: "dojofirebugextension",
     extensionLoaded: false, //if the extension has already registered its stuff.
     
     _getDojoPanel: function(context) {
@@ -99,11 +100,11 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     },
         
     initialize: function() {
-        Firebug.ActivableModule.initialize.apply(this, arguments);
-
         
-        if (this.isExtensionEnabled() && Firebug.Debugger) {
-            Firebug.Debugger.addListener(this);
+        Firebug.ActivableModule.initialize.apply(this, arguments);      
+        
+        if (this.isExtensionEnabled() && Firebug.connection) {
+            Firebug.connection.addListener(this);
         }
         
         this._registerContextMenuListener();
@@ -149,8 +150,9 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     
     shutdown: function() {
         Firebug.ActivableModule.shutdown.apply(this, arguments);
-        if (Firebug.Debugger) {
-            Firebug.Debugger.removeListener(this);
+        if (Firebug.connection) {
+            //Firebug.Debugger.removeListener(this);
+            Firebug.connection.removeListener(this);
         }
     },
     
@@ -271,11 +273,73 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         this._getDojoPanel(context).showSubscriptions(context);
     },
     
+    //fbug 1.8 compatible
     /**
      * called on each dojo file loaded (actually for every file).
      * This way, we can detect when dojo.js is loaded and take action. 
      */
+    onCompilationUnit: function (context, url, kind) {
+        //FBTrace.sysout("onCompilationUnit " + url);
+        var panelIsEnable = this.isExtensionEnabled();
+        
+        if (panelIsEnable) {
+              
+           var href = url;
+          
+           if(FBTrace.DBG_DOJO_DBG) {
+               FBTrace.sysout("onCompilationUnit: " + href);
+           }
+           
+           
+           var dojo = DojoAccess._dojo(context);
+           if (!context.connectHooked && dojo && dojo.connect) {
+               context.connectHooked = true;
+           
+               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context));
+               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 1, "disconnect", this._proxyDisconnect(context), null);
+               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 3, "subscribe", null, this._proxySubscribe(context));
+               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 1, "unsubscribe", this._proxyUnsubscribe(context), null);
+               
+               // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
+               DojoProxies.protectProxy(context, '_connect', 'disconnect', 'subscribe', 'unsubscribe');
+           }
+           
+           // Check if the _connect function was overwritten.
+           if (context.connectHooked && (!context.connectREHOOKED) && !DojoProxies.isDojoExtProxy(dojo._connect) && !dojo._connect._listeners) {
+               context.connectREHOOKED = true;
+               
+               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context));
+                
+               // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
+               DojoProxies.protectProxy(context, "_connect");
+           }
+           
+           //register a dojo.ready callback
+           if(!context.showInitialViewCall && dojo && (dojo.ready || dojo.addOnLoad)) {
+               var showInitialViewCall = context.showInitialViewCall = function showInitialView() {
+                   var panel = DojoExtension.dojofirebugextensionModel._getDojoPanel(context);                    
+                   if (panel) {
+                       // Show the initial view.
+                       panel.showInitialView(context);
+                   }
+                   };
+               DojoUtils._addMozillaExecutionGrants(showInitialViewCall);               
+               //dojo.addOnLoad
+               var dojoReadyFn = dojo.ready || dojo.addOnLoad;
+               dojoReadyFn.call(dojo, showInitialViewCall);
+           }
+                               
+       }
+
+    },
+    
+    /**
+     * called on each dojo file loaded (actually for every file).
+     * This way, we can detect when dojo.js is loaded and take action. 
+     */
+    /*
     onSourceFileCreated : function (context, sourceFile) {
+        FBTrace.sysout("onSourceFileCreated");
         var panelIsEnable = this.isExtensionEnabled();
         
         if (panelIsEnable) {
@@ -327,14 +391,15 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
                                
        }
     },
+    */
     
     _proxyConnect : function(context){
         var dojo = DojoAccess._dojo(context);  
-
+        
         var dojoDebugger = getDojoDebugger(context);
         
         return (function(ret, args) {
-                   
+                               
                    // FIXME[BugTicket#91]: Defensive code to avoid registering a connection made as part of a hack solution.
                    //TODO check if we can replace this by invocaton to DojoProxies.isDojoExtProxy
                    if (args[3] && args[3].internalClass == 'dojoext-added-code') {
@@ -468,6 +533,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
 /***********************************************************************************************************************/
 
 Firebug.registerActivableModule(DojoExtension.dojofirebugextensionModel);
+Firebug.DojoExtension = DojoExtension;
 
 return DojoExtension;
 

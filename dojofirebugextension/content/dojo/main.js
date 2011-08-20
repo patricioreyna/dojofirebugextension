@@ -2,24 +2,41 @@
 
 define([
     "firebug/lib/trace",
+    "dojo/core/dojofirebugextension",
     "dojo/ui/panels"
-], function(FBTrace) {
+], function(FBTrace, DojoExtension) {
         
     
 // ********************************************************************************************* //
 // The application/extension object
 
-var theApp =
-{
-    initialize: function()
-    {
-        // xxxHonza: defaults/preferences/helloworld.js prefs file is not loaded
-        // if the extensions is bootstrapped.
-        console.log("Patricio");
-        if (FBTrace) {
-            FBTrace.sysout("Dojo extension initialized");
+var theApp = {
+        initialize: function() {
+        
+            // xxxHonza: defaults/preferences/helloworld.js prefs file is not loaded
+            // if the extensions is bootstrapped.
+        
+            /* 
+             * initialize the dojofirebugextension activable module.
+             * this is needed here because extension modules are registered AFTER Firebug's default 
+             * module initialization process
+             */
+            DojoExtension.dojofirebugextensionModel.initialize();
+        
+            if (FBTrace) {
+                FBTrace.sysout("Dojo extension initialized");
+            }
+        },
+        
+        shutdown: function() {
+            if (FBTrace) {
+                FBTrace.sysout("Dojo extension shutdown");
+            }
+
+            // TODO: Extension shutdown
+            DojoExtension.dojofirebugextensionModel.shutdown();
         }
-    }
+        
 };
 
 return theApp;

@@ -24,10 +24,12 @@ if (!Firebug || !Firebug.getModuleLoaderConfig)
 
 var config = Firebug.getModuleLoaderConfig();
 config.paths[extensionName] = "dojo";
+/*
 config.debug = true;
 config.onDebug = function() {
     FBTrace.sysout.apply(FBTrace, arguments);
 }
+*/
 
 // Load main.js module (the entry point of the extension) + a support for tracing.
 Firebug.require(config, [

@@ -17,8 +17,9 @@
 define([
         "firebug/lib/lib",
         "firebug/lib/object",
+        "firebug/lib/trace",
         "firebug/lib/wrapper"
-       ], function dojoAccessFactory(FBL, Obj, Wrapper)
+       ], function dojoAccessFactory(FBL, Obj, FBTrace, Wrapper)
 {
 
     var DojoAccess = {};
@@ -188,6 +189,7 @@ DojoAccess.DojoAccessor.prototype =
          * @return array
          */
         /*array*/getWidgetsRoots: function(/*fbug context*/ context) {
+            
             var dijit = _dijit(context);
             if(!dijit) {
                 return [];
@@ -196,8 +198,8 @@ DojoAccess.DojoAccessor.prototype =
             if(!dijit.findWidgets) {
                 return [];
             }
-                        
-            return dijit.findWidgets(Wrapper.unwrapObject(context.window).document);
+            var widgets = dijit.findWidgets(Wrapper.unwrapObject(context.window).document);            
+            return widgets; 
         },
 
         /**
@@ -228,7 +230,7 @@ DojoAccess.DojoAccessor.prototype =
          * returns the dijit widgets available on the dijit registry
          * @return array
          */
-        /*array*/getWidgets: function(/*fbug context*/ context, /*function?*/filter) {
+        /*array*/getWidgets: function(/*fbug context*/ context, /*function?*/filter) {            
             //2nd impl : based on dijit.registry (this should include all widgets, and not only attached)
             var dijit = _dijit(context);
             if(!dijit) {

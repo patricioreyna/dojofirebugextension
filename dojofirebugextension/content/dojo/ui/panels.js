@@ -861,11 +861,12 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
     /**
      * returns current page's widgets
      */
-    /*array*/getWidgets: function(context) {
+    /*array*/getWidgets: function(context) {        
         var accessor = getDojoAccessor(context);
         if(!accessor) {
             return [];
         }
+        
         return accessor.getWidgets(context);
     },
 
@@ -881,6 +882,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
      * returns current page's widgets
      */
     /*array*/getWidgetsRoots: function(context) {
+
         var accessor = getDojoAccessor(context);
         if(!accessor) {
             return [];
@@ -915,6 +917,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
         var useWidgetTree = DojoPrefs._isWidgetsTreeEnabled();
         
         var widgets = (useWidgetTree) ? this.getWidgetsRoots(context) : this.getWidgets(context);
+
         var areThereAnyWidgets = widgets.length > 0; 
         if(!areThereAnyWidgets) {
             DojoReps.Messages.infoTag.append({object: Locale.$STR('warning.nowidgets.msg1', DOJO_BUNDLE)}, this.panelNode);
