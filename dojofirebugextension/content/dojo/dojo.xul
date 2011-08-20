@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
+<!-- See license.txt for terms of usage -->
 
 <!DOCTYPE dojoDTD SYSTEM "chrome://dojofirebugextension/locale/dojo.dtd">
+
+<?xml-stylesheet href="chrome://dojofirebugextension/skin/dojofirebugextension.css"?>
 
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
     
