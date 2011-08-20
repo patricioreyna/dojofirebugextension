@@ -8,7 +8,8 @@
 
 
 /**
- * dojo extension model.
+ * dojo extension model. Basically the Tracker for connections and subscriptions (and all related
+ * stuff)
  * @author preyna@ar.ibm.com
  * @author fergom@ar.ibm.com
  */

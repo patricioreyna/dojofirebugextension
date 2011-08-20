@@ -7,13 +7,13 @@
  */
 
 
+
 /**
  * dojo access. In this file you can find all accesses to a web page's dojo.
+ * There is a hierarchy to cope with the different dojo versions.
  * @author preyna@ar.ibm.com
  * @author fergom@ar.ibm.com
  */
-
-
 define([
         "firebug/lib/lib",
         "firebug/lib/object",

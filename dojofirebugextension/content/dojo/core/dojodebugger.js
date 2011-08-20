@@ -9,6 +9,7 @@
 
 /**
  * Helper functions to set dojo related breakpoints.
+ * This class interacts with Firefox and Firebug apis related to breakpoints and source files. 
  * @author preyna@ar.ibm.com
  * @author fergom@ar.ibm.com
  */
