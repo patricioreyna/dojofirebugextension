@@ -779,7 +779,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
         if(!ctx.dojo) {
             return false;
         }
-        return (ctx.dojo.mainMenuSelectedOption) && (ctx.dojo.mainMenuSelectedOption == option); 
+        return (ctx.dojo.mainMenuSelectedOption) && (ctx.dojo.mainMenuSelectedOption === option); 
     },
     
     _setOption: function(option, ctx) {
@@ -801,9 +801,9 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
         
         var context = _safeGetContext(this);
         return [
-                { label: Locale.$STR('label.Widgets', DOJO_BUNDLE), nol10n: true, type: 'checkbox', checked: this._isOptionSelected(SHOW_WIDGETS, context), command: Obj.bindFixed(this.showWidgets, this, context)  },
-                { label: Locale.$STR('label.Connections', DOJO_BUNDLE), nol10n: true, type: 'checkbox', checked: this._isOptionSelected(SHOW_CONNECTIONS_TABLE, context), command: Obj.bindFixed(this.showConnectionsInTable, this, context)  },
-                { label: Locale.$STR('label.Subscriptions', DOJO_BUNDLE), nol10n: true, type: 'checkbox', checked: this._isOptionSelected(SHOW_SUBSCRIPTIONS, context), command: Obj.bindFixed(this.showSubscriptions, this, context)  },
+                { label: Locale.$STR('label.Widgets', DOJO_BUNDLE), name: 'dojoMainPanelOptions', nol10n: true, type: 'radio', checked: this._isOptionSelected(SHOW_WIDGETS, context), command: Obj.bindFixed(this.showWidgets, this, context)  },
+                { label: Locale.$STR('label.Connections', DOJO_BUNDLE), name: 'dojoMainPanelOptions', nol10n: true, type: 'radio', checked: this._isOptionSelected(SHOW_CONNECTIONS_TABLE, context), command: Obj.bindFixed(this.showConnectionsInTable, this, context)  },
+                { label: Locale.$STR('label.Subscriptions', DOJO_BUNDLE), name: 'dojoMainPanelOptions', nol10n: true, type: 'radio', checked: this._isOptionSelected(SHOW_SUBSCRIPTIONS, context), command: Obj.bindFixed(this.showSubscriptions, this, context)  },
                 "-",
                 { label: Locale.$STR('label.BreakPointPlaceEnable', DOJO_BUNDLE), nol10n: true, type: 'checkbox', disabled: DojoPrefs._isUseEventBasedProxyEnabled(), checked: !DojoPrefs._isBreakPointPlaceSupportDisabled(), command: Obj.bindFixed(this._switchConfigurationSetting, this, DojoPrefs._switchBreakPointPlaceEnabled, context) },
                 "-",
