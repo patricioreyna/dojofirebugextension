@@ -110,6 +110,8 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         this._registerContextMenuListener();
     },
     
+    //firebug contextmenu inspect related methods
+    
     _registerContextMenuListener: function() {
         var contextMenu = document.getElementById("contentAreaContextMenu");
         if (contextMenu) {
@@ -147,6 +149,8 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         panel = Firebug.chrome.selectPanel(inspectingPanelName);
         panel.panelNode.focus();
     },
+    
+    //end of firebug contextmenu inspect related methods
     
     shutdown: function() {
         Firebug.ActivableModule.shutdown.apply(this, arguments);
