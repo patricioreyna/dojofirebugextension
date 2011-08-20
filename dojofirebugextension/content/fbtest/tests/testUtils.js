@@ -52,9 +52,9 @@ window._toArray = function(/*WidgetSet*/ registry) {
  */
 FBTest.compareHash = function(expected, actual, msg)
 {
-
-	var DojoExtension = FBTest.FirebugWindow.Firebug.DojoExtension;
-	var useHashCodes = DojoExtension._isHashCodeBasedDictionaryImplementationEnabled();
+    var Firebug = FBTest.FirebugWindow.Firebug;
+    var useHashCodes = Firebug.Options.getPref(Firebug.Options.getPrefDomain(), "dojofirebugextension.useHashCodes");
+	var DojoExtension = Firebug.DojoExtension;
 	if(!useHashCodes) {
 		return FBTest.compare(expected, actual, msg);
 	}
@@ -64,7 +64,7 @@ FBTest.compareHash = function(expected, actual, msg)
 	FBTest.progress("FBTest.compareHash about to compare with useHashCodes == true");
 	
 	var result;
-	result = DojoExtension.DojoModel.areEqual(expected, actual, useHashCodes);
+	result = DojoExtension.Collections.areEqual(expected, actual, useHashCodes);
 	
     FBTest.sysout("compareHash "+(result?"passes":"**** FAILS ****")+" "+msg, {expected: expected, actual: actual});
 

@@ -19,7 +19,7 @@ function runTest()
 	    enableDojoPanel();
 
 	    try {
-	    	var panel = FW.FirebugChrome.selectPanel("dojofirebugextension"); //get our panel
+	    	var panel = FW.Firebug.chrome.selectPanel("dojofirebugextension"); //get our panel
 	    	var context = FW.Firebug.currentContext; //context!
 	    	var widgets = panel.getWidgets(context); //method being tested
 
@@ -29,7 +29,7 @@ function runTest()
 	    	 */
 	        FBTest.compare(36, widgets.length, "the must be 36 widgets");
 	        
-	        FBTest.compare(1, panel.getWidgetsRoots(context).length, "the must be 1 tree roots");
+	        FBTest.compare(1, panel.getWidgetsRoots(context).length, "the must be 1 tree root");
 	        
 	        
 	    	

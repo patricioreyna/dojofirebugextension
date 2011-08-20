@@ -19,12 +19,13 @@ define([
         "firebug/lib/wrapper",
         "dojo/core/dojoaccess",
         "dojo/core/dojodebugger",
-        "dojo/core/dojomodel",
+        "dojo/core/dojomodel",        
         "dojo/core/prefs",
-        "dojo/core/proxies",        
+        "dojo/core/proxies",  
+        "dojo/lib/collections",
         "dojo/lib/utils",
         "dojo/ui/dojoreps"
-       ], function dojoModuleFactory(Firebug, Dom, Obj, FBTrace, Wrapper, DojoAccess, DojoDebug, DojoModel, DojoPrefs, DojoProxies, DojoUtils, DojoReps)
+       ], function dojoModuleFactory(Firebug, Dom, Obj, FBTrace, Wrapper, DojoAccess, DojoDebug, DojoModel, DojoPrefs, DojoProxies, Collections, DojoUtils, DojoReps)
 {
 
 // ****************************************************************
@@ -337,66 +338,6 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
 
     },
     
-    /**
-     * called on each dojo file loaded (actually for every file).
-     * This way, we can detect when dojo.js is loaded and take action. 
-     */
-    /*
-    onSourceFileCreated : function (context, sourceFile) {
-        FBTrace.sysout("onSourceFileCreated");
-        var panelIsEnable = this.isExtensionEnabled();
-        
-        if (panelIsEnable) {
-              
-           var href = sourceFile.href;
-          
-           if(FBTrace.DBG_DOJO_DBG) {
-               FBTrace.sysout("onSourceFileCreated: " + href);
-           }
-           
-           
-           var dojo = DojoAccess._dojo(context);
-           if (!context.connectHooked && dojo && dojo.connect) {
-               context.connectHooked = true;
-           
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context));
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 1, "disconnect", this._proxyDisconnect(context), null);
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 3, "subscribe", null, this._proxySubscribe(context));
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 1, "unsubscribe", this._proxyUnsubscribe(context), null);
-               
-               // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
-               DojoProxies.protectProxy(context, '_connect', 'disconnect', 'subscribe', 'unsubscribe');
-           }
-           
-           // Check if the _connect function was overwritten.
-           if (context.connectHooked && (!context.connectREHOOKED) && !DojoProxies.isDojoExtProxy(dojo._connect) && !dojo._connect._listeners) {
-               context.connectREHOOKED = true;
-               
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context));
-                
-               // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
-               DojoProxies.protectProxy(context, "_connect");
-           }
-           
-           //register a dojo.ready callback
-           if(!context.showInitialViewCall && dojo && (dojo.ready || dojo.addOnLoad)) {
-               var showInitialViewCall = context.showInitialViewCall = function showInitialView() {
-                   var panel = DojoExtension.dojofirebugextensionModel._getDojoPanel(context);                    
-                   if (panel) {
-                       // Show the initial view.
-                       panel.showInitialView(context);
-                   }
-                   };
-               DojoUtils._addMozillaExecutionGrants(showInitialViewCall);               
-               //dojo.addOnLoad
-               var dojoReadyFn = dojo.ready || dojo.addOnLoad;
-               dojoReadyFn.call(dojo, showInitialViewCall);
-           }
-                               
-       }
-    },
-    */
-    
     _proxyConnect : function(context){
         var dojo = DojoAccess._dojo(context);  
         
@@ -526,7 +467,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
        testLists.push({
            extension: "dojofirebugextension",
            //testListURL: "chrome://dojofirebugextension/content/fbtest/testlists/testList.html"
-           testListURL: "http://dojofirebugextension/chrome/content/fbtest/testlists/testList.html"
+           testListURL: "http://dojofirebugextension/content/fbtest/testlists/testList.html"
            //testListURL: "http://fbug.googlecode.com/svn/extensions/dojofirebugextension/trunk/dojofirebugextension/chrome/content/fbtest/testlists/testList.html"
        });
    }
@@ -538,6 +479,9 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
 
 Firebug.registerActivableModule(DojoExtension.dojofirebugextensionModel);
 Firebug.DojoExtension = DojoExtension;
+
+//$$HACK to make testUtils.js work
+DojoExtension.Collections = Collections;
 
 return DojoExtension;
 

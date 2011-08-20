@@ -38,6 +38,8 @@ dojo.addOnLoad(
 			d.subscribe("Test2", null, globalTestFunc);
 			d.subscribe("Test3", objTest, "testF");
 			d.subscribe("Test4", objTest, objTest.testF);
+
+			//this 2 below fails because of dojo's "hitch" . TODO FIXME take a closer look 
 			d.subscribe("Test5", "globalTestFunc");
 			d.subscribe("Test6", globalTestFunc);
 /*

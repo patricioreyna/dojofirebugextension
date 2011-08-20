@@ -12,7 +12,7 @@ function runTest()
 	    
 		FBTest.reload(function(win){
 			win = FBTest.FirebugWindow.FBL.unwrapObject(win);
-			var panel = FW.FirebugChrome.selectPanel("dojofirebugextension"); //get our panel
+			var panel = FW.Firebug.chrome.selectPanel("dojofirebugextension"); //get our panel
 			var context = FW.Firebug.currentContext; //context!
 			
 			try {
@@ -42,6 +42,7 @@ function runTest()
 
 function verify(api, topic, expectedScope, expectedMethod){
 	var sub = getSubscrition(api, topic);
+	FBTest.sysout("Sub object " + topic, sub);
 	FBTest.compareHash(expectedScope, sub.context, "For topic " + topic + " the scope is the expected one.");
 	var res = FBTest.compareHash(expectedMethod, sub.method, "For topic " + topic + " the method is the expected one.");
 	if(!res) {

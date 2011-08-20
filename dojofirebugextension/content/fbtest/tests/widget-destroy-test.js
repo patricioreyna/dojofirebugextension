@@ -20,41 +20,48 @@ function runTest() {
 		    	FBTest.progress("pageInitialNumberOfConnections: " + pageInitialNumberOfConnections);
 		    	FBTest.progress("pageInitialNumberOfSubscriptions: " + pageInitialNumberOfSubscriptions);
 		    	
-				var panel = FW.FirebugChrome.selectPanel("dojofirebugextension"); //get our panel
+		    	FBTest.sysout("FW.Firebug.chrome", FW.Firebug.chrome);
+				var panel = FW.Firebug.chrome.selectPanel("dojofirebugextension"); //get our panel
+				
+
 				var context = FW.Firebug.currentContext; //context!
-				var dijit = win.dijit;
-				
-				var api = context.connectionsAPI;
-				var originalConnections = api.getConnections().length; //array
-				var originalSubscriptions = api.getSubscriptionsList().length; //array
-				var originalWidgets = panel.getWidgets(context).length;
-				
-				//check current number of connections and subscriptions
-				FBTest.ok(originalSubscriptions > 0, "Number of subscriptions is greater than 0. It is: " + originalSubscriptions);
-				FBTest.ok(originalConnections > 0, "Number of connections is greater than 0. It is: " + originalConnections);
-				FBTest.ok(originalWidgets > 0, "Number of widgets in registry is greater than 0. It is: " + originalWidgets);				
-				
-				testButtonWidget(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
+                var dijit = win.dijit;
+                
+                var api = context.connectionsAPI;
+                var originalConnections = api.getConnections().length; //array
+                var originalSubscriptions = api.getSubscriptionsList().length; //array
+                var originalWidgets = panel.getWidgets(context).length;
+                
+                //check current number of connections and subscriptions
+                FBTest.ok(originalSubscriptions > 0, "Number of subscriptions is greater than 0. It is: " + originalSubscriptions);
+                FBTest.ok(originalConnections > 0, "Number of connections is greater than 0. It is: " + originalConnections);
+                FBTest.ok(originalWidgets > 0, "Number of widgets in registry is greater than 0. It is: " + originalWidgets);               
+                
+                testButtonWidget(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
 
-		    	//A DIALOG NOW...
-				/* 
-				 * Important note: dijit.Dialog also initializes the DialogUnderlay widget wich remains in registry.
-				 * That's valid. So we need to increment the number of originalWidget + from now on...
-				 */
-//				originalWidgets++;
-//				testWithDialog(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
+                //A DIALOG NOW...
+                /* 
+                 * Important note: dijit.Dialog also initializes the DialogUnderlay widget wich remains in registry.
+                 * That's valid. So we need to increment the number of originalWidget + from now on...
+                 */
+//	              originalWidgets++;
+//	              testWithDialog(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
 
-		    	//a TabContainer now (it adds subscriptions)...
-				testWithTabContainerWidget(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
+                //a TabContainer now (it adds subscriptions)...
+                testWithTabContainerWidget(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
+
+                
+                verifyEverythingWasCleanedUp(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
+                
+                FBTest.compare(api.getConnections().length, win.connCounter + (originalConnections - pageInitialNumberOfConnections), "Comparison between page connections and our number of connections");
+                FBTest.compare(api.getSubscriptionsList().length, win.subsCounter + (originalSubscriptions - pageInitialNumberOfSubscriptions), "Comparison between page subscriptions and our number of subscriptions");
+                
+                FBTest.compare(pageInitialNumberOfConnections, win.connCounter, "Comparison between page actual connections and page initial number of connections");
+                FBTest.compare(pageInitialNumberOfSubscriptions, win.subsCounter, "Comparison between page actual subscriptions and page initial number of subscriptions");
+
+                
 
 				
-				verifyEverythingWasCleanedUp(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
-				
-				FBTest.compare(api.getConnections().length, win.connCounter + (originalConnections - pageInitialNumberOfConnections), "Comparison between page connections and our number of connections");
-				FBTest.compare(api.getSubscriptionsList().length, win.subsCounter + (originalSubscriptions - pageInitialNumberOfSubscriptions), "Comparison between page subscriptions and our number of subscriptions");
-				
-				FBTest.compare(pageInitialNumberOfConnections, win.connCounter, "Comparison between page actual connections and page initial number of connections");
-				FBTest.compare(pageInitialNumberOfSubscriptions, win.subsCounter, "Comparison between page actual subscriptions and page initial number of subscriptions");
 				
 		    } catch (err) {
 		        FBTest.exception("Test: ", err);
