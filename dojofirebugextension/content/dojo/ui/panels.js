@@ -24,13 +24,14 @@ define([
         "firebug/lib/search",
         "firebug/lib/string",
         "firebug/lib/trace",
+        "dojo/core/dojoaccess",
         "dojo/core/dojofirebugextension",
         "dojo/core/dojomodel",
         "dojo/core/prefs",
         "dojo/lib/collections",
         "dojo/ui/dojoreps",      
         "dojo/ui/uihelpers"
-       ], function dojoPanelsFactory(Firebug, Firefox, Win, Xpcom, Css, Dom, Json, Locale, Obj, Search, Str, FBTrace, DojoExtension, DojoModel, DojoPrefs, Collections, DojoReps, UI)
+       ], function dojoPanelsFactory(Firebug, Firefox, Win, Xpcom, Css, Dom, Json, Locale, Obj, Search, Str, FBTrace, DojoAccess, DojoExtension, DojoModel, DojoPrefs, Collections, DojoReps, UI)
 {
 
     var DOJO_BUNDLE = UI.DOJO_BUNDLE;    
@@ -1279,9 +1280,9 @@ DojoPanels.DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
             if(!ctx.connectionsAPI) { return; }
             self._updateCounter(this.subscriptionCounterNode, ctx.connectionsAPI.getSubscriptionsList().length); 
         };
-        var widgetsCounterGetter = function() {
-            if(!ctx.dojo.dojoAccessor) { return; }
-            self._updateCounter(this.widgetsCounterNode, ctx.dojo.dojoAccessor.getDijitRegistrySize(ctx)); 
+        var widgetsCounterGetter = function() { 
+            if(!DojoAccess.isInitialized(ctx)) { return; }
+            self._updateCounter(this.widgetsCounterNode, getDojoAccessor(ctx).getDijitRegistrySize(ctx)); 
         };
 
         //registers the listeners into model...

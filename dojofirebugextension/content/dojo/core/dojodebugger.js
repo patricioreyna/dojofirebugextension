@@ -18,19 +18,50 @@
 define([
         "firebug/firebug",
         "firebug/js/fbs",
-        "firebug/js/stackFrame",
+        "firebug/js/stackFrame",        
         "firebug/lib/object",
         "firebug/lib/trace",
+        "dojo/core/dojoaccess",
         "dojo/lib/filtering"
-       ], function dojoDebuggerFactory(Firebug, FBS, StackFrame, Obj, FBTrace, DojoFilter)
+       ], function dojoDebuggerFactory(Firebug, FBS, StackFrame, Obj, FBTrace, DojoAccess, DojoFilter)
 {
 
 const Ci = Components.interfaces;
 const PCMAP_SOURCETEXT = Ci.jsdIScript.PCMAP_SOURCETEXT;
     
-    
-var DojoDebug = {};
+    var DojoDebug = {};
  
+
+    /* ****************************************************************************
+     * ****************************************************************************
+     * ****************************************************************************
+     */       
+    //CONTEXT RELATED METHODS (init, destroy, get an implementation, etc)
+    
+    DojoDebug.initContext = function(context) {
+        if(!context.dojo) {
+            context.dojo = {};
+        }
+        context.dojo.dojoDebugger = new DojoDebug.DojoDebugger();       
+    };
+    DojoDebug.isInitialized = function(context) {
+        return context.dojo.dojoDebugger != undefined && context.dojo.dojoDebugger != null;
+    }; 
+    
+    DojoDebug.destroyInContext = function(context) {
+        if(!context.dojo || !context.dojo.dojoDebugger) {
+            return;
+        }        
+        context.dojo.dojoDebugger.destroy();
+        delete context.dojo.dojoDebugger;       
+    };
+    
+    DojoDebug.getImpl = function(context) {
+        var impl = context.dojo.dojoDebugger;        
+        return impl;
+    };
+    
+
 /* ****************************************************************************
  * ****************************************************************************
  * ****************************************************************************
@@ -102,13 +133,11 @@ DebugInfo.prototype =
 /**
  * dojo debugger service. It's the contact with the Firebug debugger
  */
-var DojoDebugger = function(/*DojoAccessor*/ dojoAccessor) {
-    this.dojoProxy = dojoAccessor;
-};
+var DojoDebugger = function() {};
 DojoDebugger.prototype = 
 {
         destroy: function() {
-            delete this.dojoProxy;
+            //nothing to do
         },
 
         /**
@@ -235,7 +264,7 @@ DojoDebugger.prototype =
          */
         /*DebugInfo*/getDebugInfoAboutConnectCaller: function(/*fbug context*/context) {
             //'connect place' -> dojo.connect impl -> (_connect wrapper from _Widget) -> our proxy -> dojo._connect impl
-            return this.getDebugInfoAboutCaller(context, this.dojoProxy.getStackTraceDepthForConnect(context));
+            return this.getDebugInfoAboutCaller(context, DojoAccess.getImpl(context).getStackTraceDepthForConnect(context));
         },
         
         /**
@@ -244,7 +273,7 @@ DojoDebugger.prototype =
          * @return DebugInfo, or null if we cannot find a calling stacktrace
          */
         /*DebugInfo*/getDebugInfoAboutSubscribeCaller: function(/*fbug context*/context) {
-            return this.getDebugInfoAboutCaller(context, this.dojoProxy.getStackTraceDepthForSubscribe(context));
+            return this.getDebugInfoAboutCaller(context, DojoAccess.getImpl(context).getStackTraceDepthForSubscribe(context));
         },
         
         /**

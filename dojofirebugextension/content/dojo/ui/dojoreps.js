@@ -24,10 +24,11 @@ define([
         "firebug/lib/lib",
         "firebug/lib/locale",
         "firebug/lib/object",
+        "dojo/core/dojoaccess",
         "dojo/core/dojomodel",
         "dojo/core/prefs",
         "dojo/lib/collections",
-       ], function dojoRepsFactory(FirebugReps, Firebug, StackFrame, Css, Dom, Domplate, Events, FBL, Locale, Obj, DojoModel, DojoPrefs, Collections)
+       ], function dojoRepsFactory(FirebugReps, Firebug, StackFrame, Css, Dom, Domplate, Events, FBL, Locale, Obj, DojoAccess, DojoModel, DojoPrefs, Collections)
 {
 with(Domplate) {
 
@@ -802,7 +803,7 @@ DojoReps.WidgetsTreeRep = domplate({
             return widget.children;
         }
         var ctx = Firebug.currentContext;
-        var dojoAccessor = ctx.dojo.dojoAccessor;        
+        var dojoAccessor = DojoAccess.getImpl(ctx);
         var children = dojoAccessor.findWidgets(widget, ctx);
         return children;
     },

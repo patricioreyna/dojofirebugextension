@@ -43,8 +43,75 @@ define([
 
         return Wrapper.unwrapObject(context.window).dijit || null;        
     };
- 
 
+    
+    /* ****************************************************************************
+     * ****************************************************************************
+     * ****************************************************************************
+     */       
+    //CONTEXT RELATED METHODS (init, destroy, get an implementation, etc)
+    
+    DojoAccess.initContext = function(context) {
+        if(!context.dojo) {
+            context.dojo = {};
+        }
+        context.dojo.dojoAccessor = _createDojoAccessor(context);       
+    };
+    DojoAccess.isInitialized = function(context) {
+        return context.dojo.dojoAccessor != undefined && context.dojo.dojoAccessor != null;
+    }; 
+
+    DojoAccess.destroyInContext = function(context) {
+        if(!context.dojo || !context.dojo.dojoAccessor) {
+            return;
+        }        
+        context.dojo.dojoAccessor.destroy();
+        delete context.dojo.dojoAccessor;       
+    };
+
+    var dummyImpl = null;
+    DojoAccess.getImpl = function(context) {
+        var impl = context.dojo.dojoAccessor;        
+        if(!impl) {
+            //try to find impl
+            var validImpl = _createDojoAccessor(context);
+            if(validImpl) {
+                //let's store it
+                context.dojo.dojoAccessor = validImpl;
+                impl = validImpl;
+            } else {
+                //return a dummy impl to buy some more time...
+                if(FBTrace.DBG_DOJO) {
+                    FBTrace.sysout("DOJO returning dummy DojoAccessor impl to buy some time...");
+                }                             
+
+                if(!dummyImpl) {
+                    if(FBTrace.DBG_DOJO) {
+                        FBTrace.sysout("DOJO creating dummy DojoAccessor impl");
+                    }                                
+                    dummyImpl = new DojoAccess.DojoAccessor();                    
+                }
+                impl = dummyImpl;
+            } 
+        }
+        return impl;
+    };
+    
+    //factory method
+    var _createDojoAccessor = function(context) {
+        var dojo = _dojo(context);
+        if(!dojo) {
+            return;
+        }
+        var version = Version.prototype.fromDojoVersion(dojo.version);        
+        if(version.compare(Version.prototype.fromVersionString("1.7")) >= 0) {
+            return new DojoAccess.DojoAccessor17();
+        } else {
+            return new DojoAccess.DojoAccessor();
+        }        
+    };
+        
+    
 /* ****************************************************************************
  * ****************************************************************************
  * ****************************************************************************
@@ -54,6 +121,9 @@ var API_DOC_URL_BASE = "http://dojotoolkit.org/api/";
 var REFERENCE_GUIDE_URL = "http://dojotoolkit.org/reference-guide/";
 
 DojoAccess.DojoAccessor = function() {
+    if(FBTrace.DBG_DOJO) {
+        FBTrace.sysout("DOJO Default DojoAccessor impl created");
+    }
 };
 DojoAccess.DojoAccessor.prototype = 
 {
@@ -71,16 +141,6 @@ DojoAccess.DojoAccessor.prototype =
             //nothing to do currently..            
         },
         
-        /**
-         * NOT BEING USED CURRENTLY
-         * returns true if the "dojo.connect" function exists
-         * @param context a fbug context
-         * @return boolean
-         */
-        isDojoConnectFunctionLoaded: function(/*fbug context*/context) {
-            return _dojo(context) && _dojo(context).connect;
-        },
-
         /**
          * returns DojoInfo object about the current loaded dojo.
          * @return { 'version': dojo.version, 'djConfig': djConfig };
@@ -425,8 +485,6 @@ DojoAccess.DojoAccessor.prototype =
             
             /* Declared Class */
             props['declaredClass'] = widget['declaredClass'];
-//            var declaredClassName = this._getDeclaredClassName(widget);
-//            props['declaredClass'] = dojo.getObject(declaredClassName);
             
             /* Dom Node */
             props['domNode'] = widget.domNode;
@@ -516,6 +574,15 @@ DojoAccess.DojoAccessor.prototype =
         }
 
 };
+
+DojoAccess.DojoAccessor17 = function() {
+    if(FBTrace.DBG_DOJO) {
+        FBTrace.sysout("DOJO DojoAccessor for dojo 1.7 created");
+    }
+};
+DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototype, {
+    
+});
 
 
 /* 

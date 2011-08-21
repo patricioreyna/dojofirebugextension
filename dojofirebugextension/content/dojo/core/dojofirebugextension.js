@@ -41,7 +41,7 @@ define([
      * returns the DojoAccessor service.
      */
     var getDojoAccessor = DojoExtension.getDojoAccessor = function(context) {
-        var service = context.dojo.dojoAccessor;
+        var service = DojoAccess.getImpl(context);
         return service;
     };
     
@@ -49,7 +49,7 @@ define([
      * returns the DojoDebugger service.
      */
     var getDojoDebugger = DojoExtension.getDojoDebugger = function(context) {
-        var service = context.dojo.dojoDebugger;
+        var service = DojoDebug.getImpl(context);        
         return service;
     };
 
@@ -163,8 +163,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     
     initContext: function(context, persistedState) {
         Firebug.ActivableModule.initContext.apply(this, arguments);
-        var dojoAccessor = new DojoAccess.DojoAccessor();
-
+        
         // Save extension's initial preferences values.
         context.initialConfig = {
                 hashCodeBasedDictionaryImplementationEnabled: DojoPrefs._isHashCodeBasedDictionaryImplementationEnabled(),
@@ -176,13 +175,12 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
                                         new DojoProxies.ObjectMethodProxierEventBased(context) : 
                                         new DojoProxies.ObjectMethodProxierDirectAccessBased();
 
-        context.dojo = {            
-                dojoAccessor: dojoAccessor,
-                dojoDebugger: new DojoDebug.DojoDebugger(dojoAccessor)
-        };
-
-        context.connectionsAPI = new DojoModel.ConnectionsAPI(DojoPrefs._isHashCodeBasedDictionaryImplementationEnabled());
-        
+                                        
+        if(!context.dojo) {
+            DojoAccess.initContext(context);
+            DojoDebug.initContext(context);                                      
+        }
+        context.connectionsAPI = new DojoModel.ConnectionsAPI(DojoPrefs._isHashCodeBasedDictionaryImplementationEnabled());        
         
         // FIXME: HACK to find out if the page need to be reloaded due to data inconsistencies issues.
         var dojo = DojoAccess._dojo(context);
@@ -222,13 +220,12 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         Firebug.ActivableModule.destroyContext.apply(this, arguments);
   
         //destroy what we created on initContext
-        context.dojo.dojoDebugger.destroy();
-        context.dojo.dojoAccessor.destroy();
         context.connectionsAPI.destroy();
         context.objectMethodProxier.destroy();
         
-        delete context.dojo.dojoDebugger;
-        delete context.dojo.dojoAccessor;
+        DojoAccess.destroyInContext(context);
+        DojoDebug.destroyInContext(context);
+        
         delete context.connectionsAPI;
     },
             
