@@ -409,8 +409,7 @@ DojoAccess.DojoAccessor.prototype =
          */
         /*Object*/getSpecificWidgetProperties: function(widget, context) {
             var dojo = _dojo(context);            
-            var dijit = _dijit(context);
-            var tracker = context.connectionsAPI;
+            var dijit = _dijit(context);            
             var props = {};
             var self = this;
             
@@ -442,37 +441,8 @@ DojoAccess.DojoAccessor.prototype =
             if(children.length > 0) {
                 props['children'] = children;
             }
-                    
-            if(tracker) {
-                if(widget._connects) {
-                    var connects = [];
-                    
-                    widget._connects.forEach(function(handleOrArray) {
-                        if(self.isArray(handleOrArray)) {
-                            handleOrArray.forEach(function(handle) {
-                                connects.push(tracker.getConnectionByHandle(handle));
-                            });
-                        } else {
-                            connects.push(tracker.getConnectionByHandle(handleOrArray));
-                        }
-                    }, this);                        
 
-                    if(connects.length > 0) {
-                        props['connects'] = connects;
-                    }
-                }
-                
-                /* FIXME dojo 1.7 widgets don't have _subscribe field anymore (widget's subscriptions are handled 
-                 * with _connects field as well on that dojo version). */
-                if(widget._subscribes) {
-                    var subs = widget._subscribes.map(function(handle) {
-                        return tracker.getSubscriptionByHandle(handle);
-                    }, this);
-                    if(subs.length > 0) {
-                        props['subscribes'] = subs;
-                    }
-                }
-            }
+            this._getConnectionsAndSubscriptions(widget, context, props, self);
             
             if(widget._started != undefined) {
                 props['startup invoked'] = widget._started;
@@ -517,6 +487,40 @@ DojoAccess.DojoAccessor.prototype =
             
             return props;
         }, 
+        
+        _getConnectionsAndSubscriptions: function(widget, context, /*object*/props, self) {
+            var tracker = context.connectionsAPI;
+            if(tracker) {
+                if(widget._connects) {
+                    var connects = [];
+                    
+                    widget._connects.forEach(function(handleOrArray) {
+                        if(self.isArray(handleOrArray)) {
+                            handleOrArray.forEach(function(handle) {
+                                connects.push(tracker.getConnectionByHandle(handle));
+                            });
+                        } else {
+                            connects.push(tracker.getConnectionByHandle(handleOrArray));
+                        }
+                    }, this);                        
+
+                    if(connects.length > 0) {
+                        props['connects'] = connects;
+                    }
+                }
+                
+                /* FIXME dojo 1.7 widgets don't have _subscribe field anymore (widget's subscriptions are handled 
+                 * with _connects field as well on that dojo version). */
+                if(widget._subscribes) {
+                    var subs = widget._subscribes.map(function(handle) {
+                        return tracker.getSubscriptionByHandle(handle);
+                    }, this);
+                    if(subs.length > 0) {
+                        props['subscribes'] = subs;
+                    }
+                }
+            }
+        },
         
         _getDeclaredClassName: function(dojoObject) {
             return dojoObject['declaredClass'];
@@ -582,6 +586,44 @@ DojoAccess.DojoAccessor17 = function() {
 };
 DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototype, {
     
+    _getConnectionsAndSubscriptions: function(widget, context, props, self) {       
+        
+        var tracker = context.connectionsAPI;
+        if(tracker && widget._connects) {
+            var connects = [];
+            var subs = [];
+            
+            widget._connects.forEach(function(handleOrArray) {
+                if(self.isArray(handleOrArray)) {
+                    handleOrArray.forEach(function(handle) {
+                        
+                        var connOrSub = tracker.getConnectionByHandle(handle);
+                        if(connOrSub.clazz == 'Connection') {
+                            connects.push(connOrSub);
+                        } else {
+                            subs.push(connOrSub);
+                        }
+                    });
+                } else {
+                    var connOrSub = tracker.getConnectionByHandle(handleOrArray);
+                    if(connOrSub.clazz == 'Connection') {
+                        connects.push(connOrSub);
+                    } else {
+                        subs.push(connOrSub);
+                    }
+                }
+            }, this);                        
+
+            if(connects.length > 0) {
+                props['connects'] = connects;
+            }
+            if(subs.length > 0) {
+                props['subscribes'] = subs;
+            }            
+        } 
+        
+    }    
+
 });
 
 

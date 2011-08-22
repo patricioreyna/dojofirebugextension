@@ -281,7 +281,6 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
      * This way, we can detect when dojo.js is loaded and take action. 
      */
     onCompilationUnit: function (context, url, kind) {
-        //FBTrace.sysout("onCompilationUnit " + url);
         var panelIsEnable = this.isExtensionEnabled();
         
         if (panelIsEnable) {

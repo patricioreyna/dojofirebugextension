@@ -224,11 +224,19 @@ define([
                  //FIXME aca me salta un component is not available..(sera por las 5 conns?)
                  //con 5 args, me da este error
                  //con 4 args , me salta error de "lls[i] is null"
-                 
+                                 
+                 //FIXME ideally originalFunction should be an argument passed in by the corresponding proxy (based on dojo version)
                  var originalFunction = null;
                  try {
-                    //originalFunction = ((obj[event]) ? obj[event].target : null);
-                     originalFunction = ((obj[event]) ? obj[event]['target'] : null);
+//                     originalFunction = ((obj[event]) ? obj[event]['target'] : null);
+
+                     //$$HACK if using dojo 1.7's connect based on 'advices', then we disable Break on Event                     
+                     if(!obj[event] || obj[event]['after']) {
+                         originalFunction = null;
+                     } else {
+                         originalFunction = obj[event]['target'];  
+                     }                    
+                     
                  } catch (exc) {
                      //should not be here...
                      if(FBTrace.DBG_DOJO_DBG) {
