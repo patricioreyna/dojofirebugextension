@@ -230,7 +230,7 @@ define([
                  try {
 //                     originalFunction = ((obj[event]) ? obj[event]['target'] : null);
 
-                     //$$HACK if using dojo 1.7's connect based on 'advices', then we disable Break on Event                     
+                     //$$HACK if using dojo 1.7's connect based on 'advices', then we disable Break on Event.                     
                      if(!obj[event] || obj[event]['after']) {
                          originalFunction = null;
                      } else {
