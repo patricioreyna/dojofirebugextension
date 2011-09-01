@@ -1,0 +1,4 @@
+changes in version 1.1a1:
+* "break on Event" support disable when using dojo 1.7+ (introduced "advises" don't allow me to find the event)
+* added support for dojo 1.7
+* compatible with new firebug 1.8 format
