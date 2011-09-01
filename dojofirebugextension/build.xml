@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="dojofirebugextension" default="release" basedir=".">
+<project name="dojofirebugextension" default="release-all" basedir=".">
 
 	<property name="dist.dir" value="dist/" />
 	<property name="build.dir" value="build/" />
@@ -71,7 +71,14 @@
 
 	<target name="clean">
 		<delete dir="${build.dir}" />
-		<delete dir="${dist.dir}" />
+	</target>
+
+	<target name="clean-amo" depends="clean">
+		<delete dir="${dist.dir}/${FBUG_VERSION}/${ant.project.name}-${VERSION}${RELEASE}-amo.xpi" />
+	</target>
+
+	<target name="clean-getfirebug" depends="clean">
+		<delete dir="${dist.dir}/${FBUG_VERSION}/${xpi.filename}" />
 	</target>
 
     <!-- Remove update URL, this is necessary for AMO -->
@@ -83,7 +90,7 @@
     </target>
 
     <!-- Build AMO Release -->
-    <target name="release-amo" depends="prepare">
+    <target name="release-amo" depends="clean-amo, prepare">
         <antcall target="disableUpdate" />
         <antcall target="xpi">
         	<param name="xpi.filename" value="${ant.project.name}-${VERSION}${RELEASE}-amo.xpi"/>
@@ -91,8 +98,16 @@
     </target>
 
     <!-- Build AMO Release -->
-    <target name="release" depends="prepare">
+    <target name="release-getfirebug" depends="clean-getfirebug, prepare">
         <antcall target="xpi"/>
+    </target>
+
+	<!-- Default Release target -->
+    <target name="release-all">    
+    	<!-- order is important since both antcall creates the update.rdf, and it's only
+    	valid for the 2nd call (TODO: improve that) -->
+    	<antcall target="release-amo"/>
+    	<antcall target="release-getfirebug"/>
     </target>
 
 
