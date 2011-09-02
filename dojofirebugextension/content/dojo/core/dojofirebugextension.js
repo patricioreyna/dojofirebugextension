@@ -463,7 +463,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
        testLists.push({
            extension: "dojofirebugextension",
            //testListURL: "chrome://dojofirebugextension/content/fbtest/testlists/testList.html"
-           testListURL: "http://dojofirebugextension/content/fbtest/testlists/testList.html"
+           testListURL: "http://testserver-alias/dojofirebugextension/content/fbtest/testlists/testList.html"
            //testListURL: "http://fbug.googlecode.com/svn/extensions/dojofirebugextension/trunk/dojofirebugextension/chrome/content/fbtest/testlists/testList.html"
        });
    }
