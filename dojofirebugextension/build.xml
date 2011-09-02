@@ -97,7 +97,7 @@
        	</antcall>
     </target>
 
-    <!-- Build AMO Release -->
+    <!-- Build getfirebug Release -->
     <target name="release-getfirebug" depends="clean-getfirebug, prepare">
         <antcall target="xpi"/>
     </target>
