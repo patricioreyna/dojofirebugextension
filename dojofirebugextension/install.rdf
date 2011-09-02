@@ -17,6 +17,7 @@
 				   em:updateURL="https://getfirebug.com/releases/dojofirebugextension/@FBUG_VERSION@/update.rdf"                 
                    em:iconURL="chrome://dojofirebugextension/content/icon.png">
     	
+    	<em:creator>patricioreyna, fernandogomezalonso</em:creator>
     	<em:developer>Patricio Reyna Almandos (IBM Argentina)</em:developer>
     	<em:developer>Fernando Gomez (IBM Argentina)</em:developer>
     	<em:homepageURL>http://getfirebug.com/wiki/index.php/DojoFirebugExtension_Reference_Guide</em:homepageURL>
