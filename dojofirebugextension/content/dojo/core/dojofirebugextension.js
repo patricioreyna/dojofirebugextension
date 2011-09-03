@@ -393,8 +393,15 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
        var dojoDebugger = getDojoDebugger(context);
        return (function(ret, args){
                        var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutSubscribeCaller(context) : null;
-                       var method = Wrapper.unwrapObject(args[2] || args[1]);
-                       var scope = Wrapper.unwrapObject(args[1] || null);
+                       var scope = Wrapper.unwrapObject(args[1]);
+                       var method = Wrapper.unwrapObject(args[2]);                    
+                       
+                       //mimic dojo.hitch logic regarding missing (omitted) context argument
+                       if(!method){
+                    	   method = scope;
+                    	   scope = null;
+                       }
+                       
                        if (!scope) {
                            scope = (typeof(method) == 'string') ? dojo.global : dojo;
                        }
