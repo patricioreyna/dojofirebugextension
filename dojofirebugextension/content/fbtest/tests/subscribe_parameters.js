@@ -18,6 +18,7 @@ function runTest()
 			try {
 		    	var api = context.connectionsAPI;
 		    	var d = win.dojo;
+		    	FBTest.sysout("dojo version: " + d.version);
 		    		    	
 		    	var globalTestFunc = win.globalTestFunc;
 				var objTest = win.objTest;
@@ -27,6 +28,8 @@ function runTest()
 		    	verifyForDojoObj(api, "Test2", globalTestFunc);
 		    	verify(api, "Test3", objTest, "testF");
 		    	verify(api, "Test4", objTest, objTest.testF);
+		    	
+		    	//this 2 below fail because of dojo's "hitch" . TODO FIXME take a closer look
 		    	verify(api, "Test5", d.global, "globalTestFunc");
 		    	//verify(api, "Test6", d, globalTestFunc);
 		    	verifyForDojoObj(api, "Test6", globalTestFunc);
@@ -53,7 +56,7 @@ function verify(api, topic, expectedScope, expectedMethod){
 //FIXME: the verify method does not work for dojo object. ??
 function verifyForDojoObj(api, topic, expectedMethod){
 	var sub = getSubscrition(api, topic);
-
+	FBTest.sysout("Sub object " + topic, sub);
 	//FIXME compare against actual "dojo" object , instead of checking for obj with connect and subscribe method to assume dojo obj!  
 	FBTest.ok(sub.context && sub.context.connect && sub.context.subscribe, "For topic " + topic + " the expected scope is dojo.");
 	var res = FBTest.compareHash(expectedMethod, sub.method, "For topic " + topic + " the method is the expected one.");

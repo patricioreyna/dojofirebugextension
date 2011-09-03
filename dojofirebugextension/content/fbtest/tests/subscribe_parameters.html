@@ -25,10 +25,10 @@
 
 <script type="text/javascript">
 
-/*
+
 dojo.addOnLoad(
 		function() {
-*/			
+			
 			var d = dojo;
 
 			var globalTestFunc = window.globalTestFunc = function(){ alert("globalTestFunc"); };
@@ -39,13 +39,13 @@ dojo.addOnLoad(
 			d.subscribe("Test3", objTest, "testF");
 			d.subscribe("Test4", objTest, objTest.testF);
 
-			//this 2 below fails because of dojo's "hitch" . TODO FIXME take a closer look 
+			//this 2 below fail because of dojo's "hitch" . TODO FIXME take a closer look 
 			d.subscribe("Test5", "globalTestFunc");
 			d.subscribe("Test6", globalTestFunc);
-/*
+
 		}
 );
-*/
+
 
 </script>
 

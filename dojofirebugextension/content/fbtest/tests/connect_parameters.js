@@ -25,6 +25,7 @@ function runTest()
 		    	var objConnHandlerTest = win.objConnHandlerTest;
 		    	var objConnTargetTest = win.objConnTargetTest;
 
+		    	FBTest.sysout("api.getObjectsWithConnections()", api.getObjectsWithConnections());
 		    	verifyConnection(api, dojoGlobal, "methodGlobal1", dojoGlobal, "methodGlobal2", 'dojo.connect("methodGlobal1", "methodGlobal2");');
 				verifyConnection(api, dojoGlobal, "methodGlobal2", dojoGlobal, dojoGlobal.methodGlobal1, 'dojo.connect("methodGlobal2", methodGlobal1);');
 				verifyConnection(api, dojoGlobal, "methodGlobal3", dojoGlobal, "methodGlobal4", 'dojo.connect(null, "methodGlobal3", "methodGlobal4");');
