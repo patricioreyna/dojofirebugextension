@@ -19,13 +19,14 @@ define([
         "firebug/lib/wrapper",
         "dojo/core/dojoaccess",
         "dojo/core/dojodebugger",
-        "dojo/core/dojomodel",        
+        "dojo/core/dojomodel",
+        "dojo/core/dojohooks",
         "dojo/core/prefs",
         "dojo/core/proxies",  
         "dojo/lib/collections",
         "dojo/lib/utils",
         "dojo/ui/dojoreps"
-       ], function dojoModuleFactory(Firebug, Dom, Obj, FBTrace, Wrapper, DojoAccess, DojoDebug, DojoModel, DojoPrefs, DojoProxies, Collections, DojoUtils, DojoReps)
+       ], function dojoModuleFactory(Firebug, Dom, Obj, FBTrace, Wrapper, DojoAccess, DojoDebug, DojoModel, DojoHooks, DojoPrefs, DojoProxies, Collections, DojoUtils, DojoReps)
 {
 
 // ****************************************************************
@@ -72,17 +73,6 @@ define([
         return context.needReload;
     };
     
-    /**
-     * returns a boolean to define if the connection should or should not be registered
-     *             considering the objects in it.
-     */
-    var _filterConnection = function(obj, event, context, method){
-        var dojoAccessor = getDojoAccessor(safeGetContext(this));
-        return dojoAccessor.isDojoAnimation(obj) && dojoAccessor.isDojoAnimation(context);
-    };
-    
-
-
 
 //****************************************************************
 // DOJO MODULE
@@ -178,7 +168,8 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
                                         
         if(!context.dojo) {
             DojoAccess.initContext(context);
-            DojoDebug.initContext(context);                                      
+            DojoDebug.initContext(context);
+            DojoHooks.initContext(context);
         }
         context.connectionsAPI = new DojoModel.ConnectionsAPI(DojoPrefs._isHashCodeBasedDictionaryImplementationEnabled());        
         
@@ -225,6 +216,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         
         DojoAccess.destroyInContext(context);
         DojoDebug.destroyInContext(context);
+        DojoHooks.destroyInContext(context);
         
         delete context.connectionsAPI;
     },
@@ -293,28 +285,14 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
            
            
            var dojo = DojoAccess._dojo(context);
-           if (!context.connectHooked && dojo && dojo.connect) {
-               context.connectHooked = true;
+           var dojoAccessor = getDojoAccessor(context);
+           var dojoDebugger = getDojoDebugger(context);
            
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context));
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 1, "disconnect", this._proxyDisconnect(context), null);
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 3, "subscribe", null, this._proxySubscribe(context));
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 1, "unsubscribe", this._proxyUnsubscribe(context), null);
-               
-               // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
-               DojoProxies.protectProxy(context, '_connect', 'disconnect', 'subscribe', 'unsubscribe');
+           if (dojo) {
+               var startupHooks = DojoHooks.getImpl(context, dojo.version);
+               startupHooks.onCompilationUnit(context, url, kind, dojo, context.objectMethodProxier, dojoAccessor, dojoDebugger, context.connectionsAPI);
            }
-           
-           // Check if the _connect function was overwritten.
-           if (context.connectHooked && (!context.connectREHOOKED) && !DojoProxies.isDojoExtProxy(dojo._connect) && !dojo._connect._listeners) {
-               context.connectREHOOKED = true;
-               
-               context.objectMethodProxier.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context));
-                
-               // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
-               DojoProxies.protectProxy(context, "_connect");
-           }
-           
+                                         
            //register a dojo.ready callback
            if(!context.showInitialViewCall && dojo && (dojo.ready || dojo.addOnLoad)) {
                var showInitialViewCall = context.showInitialViewCall = function showInitialView() {
@@ -334,90 +312,6 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
 
     },
     
-    _proxyConnect : function(context){
-        var dojo = DojoAccess._dojo(context);  
-        
-        var dojoDebugger = getDojoDebugger(context);
-        
-        return (function(ret, args) {
-                               
-                   // FIXME[BugTicket#91]: Defensive code to avoid registering a connection made as part of a hack solution.
-                   //TODO check if we can replace this by invocaton to DojoProxies.isDojoExtProxy
-                   if (args[3] && args[3].internalClass == 'dojoext-added-code') {
-                       return ret; 
-                   }
-            
-                   var obj =  Wrapper.unwrapObject(args[0] || dojo.global);            
-                   var event = Wrapper.unwrapObject(args[1]);                   
-
-                   /* The context parameter could be null, in that case it will be determined according to the dojo.hitch implementation.
-                    * See the dojo.hitch comment at [dojo directory]/dojo/_base/lang.js and 
-                    * dojo.connect comment at [dojo directory]/dojo/_base/connect.js
-                    */
-                   var handlerContext = args[2];
-                   if (!handlerContext) {
-                      if (typeof(args[3]) == 'function') {
-                           handlerContext = obj;
-                      } else {
-                           handlerContext = dojo.global;
-                      }                   
-                   }
-                   handlerContext = Wrapper.unwrapObject(handlerContext);
-                  
-                   var method = Wrapper.unwrapObject(args[3]);
-                   var dontFix = Wrapper.unwrapObject((args.length >= 5 && args[4]) ? args[4] : null);
-
-                   var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutConnectCaller(context) : null;
-                           
-                   // Verify if the connection should be filtered.
-                   if (DojoPrefs._isDojoAnimationsFilterEnabled() && 
-                        _filterConnection(obj, event, handlerContext, method)) { 
-                       return ret; 
-                   }
-                   
-                   context.connectionsAPI.addConnection(obj, event, handlerContext, method, dontFix, ret, callerInfo);
-                   return ret;
-                });
-   },
-   
-   
-   _proxyDisconnect : function(context){
-       var dojo = DojoAccess._dojo(context);
-       return (function(handle){
-                       context.connectionsAPI.removeConnection(Wrapper.unwrapObject(handle));
-                    });
-   },
-
-   _proxySubscribe : function(context){
-       var dojo = DojoAccess._dojo(context);
-       var dojoDebugger = getDojoDebugger(context);
-       return (function(ret, args){
-                       var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutSubscribeCaller(context) : null;
-                       var scope = Wrapper.unwrapObject(args[1]);
-                       var method = Wrapper.unwrapObject(args[2]);                    
-                       
-                       //mimic dojo.hitch logic regarding missing (omitted) context argument
-                       if(!method){
-                    	   method = scope;
-                    	   scope = null;
-                       }
-                       
-                       if (!scope) {
-                           scope = (typeof(method) == 'string') ? dojo.global : dojo;
-                       }
-                       
-                       var topic = Wrapper.unwrapObject(args[0]);
-                       context.connectionsAPI.addSubscription(topic, scope, method, ret, callerInfo);
-                       return ret;
-                  });
-   },
-  
-   _proxyUnsubscribe : function(context){
-       var dojo = DojoAccess._dojo(context);
-       return (function(handle){
-                       context.connectionsAPI.removeSubscription(Wrapper.unwrapObject(handle));
-                  });
-   },
    
    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
    // Activation logic
