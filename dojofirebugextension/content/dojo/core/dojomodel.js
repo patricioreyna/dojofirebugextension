@@ -218,8 +218,8 @@ define([
                     /*Object*/ callerInfo) {
              
                  if(FBTrace.DBG_DOJO_DBG) {                        
-                    FBTrace.sysout("DOJO DEBUG: adding connection " + event, [obj, event, context, method, dontFix, handle, callerInfo]);
-                }
+                	FBTrace.sysout("DOJO DEBUG: adding connection to event: " + event, [obj, event, context, method, dontFix, handle, callerInfo]);
+                 }
 
                  //FIXME aca me salta un component is not available..(sera por las 5 conns?)
                  //con 5 args, me da este error

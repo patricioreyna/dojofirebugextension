@@ -369,7 +369,14 @@ DojoAccess.DojoAccessor.prototype =
          * @return boolean
          */
         isDojoAnimation: function(object) {
-            return object["gotoPercent"] && object["pause"] && object["play"] && object["status"] && object["stop"];
+            var res = object["gotoPercent"] && object["pause"] && object["play"] && object["status"] && object["stop"];
+
+            res = res || false;
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO DEBUG isDojoAnimation: " + res, {'param':object, 'result': res});
+            }
+
+            return res;
         },
         
         /**
