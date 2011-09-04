@@ -1,6 +1,10 @@
 /* Released under BSD license (see license.txt) */
 
 /**
+ * Our Proxy implementations: method-based and shared-DOM-event-based.
+ * We use proxies to insert extension functions into the running web page, and talk to our
+ * model. See the dojohooks.js file to see how/when these proxies are created (depending 
+ * on the dojo version).
  * @author preyna@ar.ibm.com
  * @author fergom@ar.ibm.com
  */

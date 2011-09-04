@@ -42,6 +42,10 @@ const PCMAP_SOURCETEXT = Ci.jsdIScript.PCMAP_SOURCETEXT;
         if(!context.dojo) {
             context.dojo = {};
         }
+
+        if(FBTrace.DBG_DOJO) {
+            FBTrace.sysout("DOJO DojoDebugger created");
+        }
         context.dojo.dojoDebugger = new DojoDebug.DojoDebugger();       
     };
     DojoDebug.isInitialized = function(context) {
