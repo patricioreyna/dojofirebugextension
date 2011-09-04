@@ -302,7 +302,14 @@ define([
         f.internaldesc = 'dojoext-protectProxt__parent__';
         DojoUtils._addMozillaExecutionGrants(f);
         var i;
-        for (i = 2; i < arguments.length; i++) {
+        var startIndex = 2;
+        
+        if(typeof obj == "string") {
+        	//this means that obj was not passed in as argument (backward compatibility)
+        	obj = dojo;
+        	startIndex = 1;
+        }
+        for (i = startIndex; i < arguments.length; i++) {
             if(FBTrace.DBG_DOJO_DBG) {                    
                 FBTrace.sysout("DOJO DEBUG: protecting proxy (__parent__ hack) for: " + arguments[i], {'obj': obj, 'method': arguments[i]});
             }        	
