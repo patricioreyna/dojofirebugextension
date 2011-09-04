@@ -45,8 +45,10 @@ define([
                 
                 if(FBTrace.DBG_DOJO_DBG) {
                     if(method == "_connect" || method == "connect") {
-                        FBTrace.sysout("DOJO the proxy: returnValue[0].wrappedJSObject: " + returnValue[0].wrappedJSObject, returnValue);
-                        FBTrace.sysout("DOJO the proxy: postInvocationReturnValue[0].wrappedJSObject: " + postInvocationReturnValue[0].wrappedJSObject, postInvocationReturnValue);
+                        //FBTrace.sysout("DOJO the proxy: returnValue[0].wrappedJSObject: " + returnValue[0].wrappedJSObject, returnValue);
+                        //FBTrace.sysout("DOJO the proxy: postInvocationReturnValue[0].wrappedJSObject: " + postInvocationReturnValue[0].wrappedJSObject, postInvocationReturnValue);
+                    	FBTrace.sysout("DOJO the proxy: connection returnValue: ", returnValue);
+                    	FBTrace.sysout("DOJO the proxy: connection postInvocationReturnValue: ", postInvocationReturnValue);
                     }
                 }
                 
@@ -289,18 +291,22 @@ define([
      * This function is a hack that wrap the proxies to avoid errors happen when the 
      * property __parent__ are invoked for the functions.
      * @param context
+     * @param obj Obj to pass as argument to dojo.connect fn (the obj that owns the given funtion names)
      * @param fnNames remaining args are assumed to be function names
      */
-    DojoProxies.protectProxy = function(context){
+    DojoProxies.protectProxy = function(context, obj){
         var dojo = DojoAccess._dojo(context);
-
+        
         var f = function(){};
         f.internalClass = 'dojoext-added-code';
         f.internaldesc = 'dojoext-protectProxt__parent__';
         DojoUtils._addMozillaExecutionGrants(f);
         var i;
-        for (i = 1; i < arguments.length; i++) {
-            dojo.connect(dojo, arguments[i], f);
+        for (i = 2; i < arguments.length; i++) {
+            if(FBTrace.DBG_DOJO_DBG) {                    
+                FBTrace.sysout("DOJO DEBUG: protecting proxy (__parent__ hack) for: " + arguments[i], {'obj': obj, 'method': arguments[i]});
+            }        	
+            dojo.connect(obj, arguments[i], f);
         }
     };
 
