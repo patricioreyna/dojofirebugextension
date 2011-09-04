@@ -643,15 +643,32 @@ var Version = function() {
     this.major = 0;
     this.minor = 0;
     this.patch = 0;
+    this.flag;
 };
 Version.prototype = {
         //factory method
         fromVersionString: function(/*string*/ versionString) {
             var v = new Version();
             // Adapt to version scheme.
-            versionString = versionString.replace('X', '', "g");
-            versionString = versionString.replace('a', '', "g");
-            versionString = versionString.replace('b', '', "g");
+            
+            var index = -1;
+            index = versionString.indexOf("a");
+            if(index > -1) {
+                v.flag = versionString.substring(index);
+            } else {
+                index = versionString.indexOf("b");
+                if(index > -1) {
+                    v.flag = versionString.substring(index);
+                }
+            }
+            
+            
+//            versionString = versionString.replace('X', '', "g");
+//            versionString = versionString.replace('a', '', "g");
+//            versionString = versionString.replace('b', '', "g");
+            if(index > -1) {
+                versionString = versionString.substring(0, index);    
+            }
             
             var values = versionString.split('.');    
             v.major = parseInt(values[0]) || 0;
@@ -665,26 +682,29 @@ Version.prototype = {
             v.major = dojoVersion.major;
             v.minor = dojoVersion.minor;
             v.patch = dojoVersion.patch;
+            v.flag = dojoVersion.flag;
             return v;
         },
         
         toString: function() {
-            return "" + this.major + "." + this.minor + (this.patch ? "." + this.patch : "");    
+            return "" + this.major + "." + this.minor + (this.patch ? "." + this.patch : "") + (this.flag ? this.flag : "");    
         },
 
-        /*int*/compare: function(/*Version*/ anotherVersion) {
-            return -1 * anotherVersion._compareAgainstVersion(this);
+        /*int*/compare: function(/*Version*/ anotherVersion, /*bool (optional)*/strict) {
+            return -1 * anotherVersion._compareAgainstVersion(this, strict);
         },
         
-        /*int*/_compareAgainstVersion: function(/*Version*/ anotherVersion) {
+        /*int*/_compareAgainstVersion: function(/*Version*/ anotherVersion, /*bool*/strict) {
             if(this.major != anotherVersion.major) {
                 return this.major - anotherVersion.major;
             } else if(this.minor != anotherVersion.minor) {
                 return this.minor - anotherVersion.minor;
-//            } else if(this.patch != anotherVersion.patch) {
-//                return this.patch - anotherVersion.patch;
+            } else if(strict && this.patch != anotherVersion.patch) {
+                return this.patch - anotherVersion.patch;
+            } else if(strict && this.flag != anotherVersion.flag) {
+                return this.flag - anotherVersion.flag;
             }
-            return 0; //equals (we ignore patches for comparison!)
+            return 0;
         }
         
 };
@@ -718,5 +738,7 @@ var API_DOC_VERSIONS = [ Version.prototype.fromVersionString("1.3"),
                          new HeadVersion() ]; 
 
 
+	DojoAccess.Version = Version;
+	
     return DojoAccess;
 });
