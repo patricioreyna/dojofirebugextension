@@ -36,7 +36,7 @@ define([
     
     var DojoExtension = {};
     
-    var VERSION = "1.1a1";
+    var VERSION = "1.1a2";
     
     /**
      * returns the DojoAccessor service.
