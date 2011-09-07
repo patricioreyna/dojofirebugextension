@@ -323,6 +323,12 @@ define([
                  this._subscriptions.put(topic, subsForTopic);
              }
              subsForTopic.push(subs);
+            
+             if(FBTrace.DBG_DOJO_DBG) {
+                 FBTrace.sysout("new created Subs: ", subs);
+                 FBTrace.sysout("subsForTopic value: ", subsForTopic);                 
+             }
+
              
             // Register subscription
             this._getAndCreateIfRequiredObjectInfo(context).addSubscription(subs);
