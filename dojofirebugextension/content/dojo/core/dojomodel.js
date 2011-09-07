@@ -344,27 +344,29 @@ define([
           * Remove a Subscription, given a dojo handle
           */
          removeSubscription: function(/*Handle*/ handle) {
+             if(!handle) {
+                 return;
+             }
              var subs = this._disconnections.get(handle);
              
-             if (handle && (handle.length==2)){
-                 // Remove subscription
-                 var topic = handle[0];
-                 var subsForTopic = this._subscriptions.get(topic);
-                 subsForTopic.splice(subsForTopic.indexOf(subs),1);
-                 
-                 // Remove subscription from ObjectInfo
-                  var objContextInfo = this._connections.get(subs.context);
-                  objContextInfo.removeSubscription(subs);
-                  if (objContextInfo.isEmpty()) {
-                      this._connections.remove(subs.context);
-                  }
-                 
-                 // Remove from disconnections
-                  this._disconnections.remove(handle);
-                  
-                  // Raised the onSubscriptionRemoved event if there is registered handler.
-                 this.fireEvent(ConnectionsAPI.ON_SUBSCRIPTION_REMOVED);
-             }
+             // Remove subscription
+             var topic = subs.topic;
+             var subsForTopic = this._subscriptions.get(topic);
+             subsForTopic.splice(subsForTopic.indexOf(subs),1);
+             
+             // Remove subscription from ObjectInfo
+              var objContextInfo = this._connections.get(subs.context);
+              objContextInfo.removeSubscription(subs);
+              if (objContextInfo.isEmpty()) {
+                  this._connections.remove(subs.context);
+              }
+             
+             // Remove from disconnections
+              this._disconnections.remove(handle);
+              
+              // Raised the onSubscriptionRemoved event if there is registered handler.
+             this.fireEvent(ConnectionsAPI.ON_SUBSCRIPTION_REMOVED);
+
          },
          
          /**
