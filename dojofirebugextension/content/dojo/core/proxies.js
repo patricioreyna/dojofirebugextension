@@ -43,9 +43,9 @@ define([
                     FBTrace.sysout("DOJO DEBUG: executing proxy for fn:" + method + ", args: ", a);
                 }
                 
-                var funcPreInvParams = (funcPreInvocation != null) ? funcPreInvocation.apply(obj, arguments) : null;
-                var returnValue = functionToProxy.apply(obj, arguments);
-                var postInvocationReturnValue = (funcPostInvocation != null) ? funcPostInvocation.call(obj, returnValue, arguments, funcPreInvParams) : null;
+                var funcPreInvParams = (funcPreInvocation != null) ? funcPreInvocation.apply(this, arguments) : null;
+                var returnValue = functionToProxy.apply(this, arguments);
+                var postInvocationReturnValue = (funcPostInvocation != null) ? funcPostInvocation.call(this, returnValue, arguments, funcPreInvParams) : null;
                 
                 if(FBTrace.DBG_DOJO_DBG) {
                     if(method == "_connect" || method == "connect") {
@@ -101,6 +101,7 @@ define([
                 if(FBTrace.DBG_DOJO_DBG) {                    
                     var a = arguments;                    
                     FBTrace.sysout("DOJO DEBUG: executing _protectProxyFromExceptions proxy. Args: ", a);
+                    FBTrace.sysout("DOJO DEBUG: executing _protectProxyFromExceptions proxy. This value: ", this);
                 }
                                 
                 try {
