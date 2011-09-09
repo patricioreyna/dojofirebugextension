@@ -804,7 +804,7 @@ DojoReps.WidgetsTreeRep = domplate({
         }
         var ctx = Firebug.currentContext;
         var dojoAccessor = DojoAccess.getImpl(ctx);
-        var children = dojoAccessor.findWidgets(widget, ctx);
+        var children = dojoAccessor.findWidgets(widget.domNode, ctx);
         return children;
     },
     hasChildren: function(widget) {

@@ -224,24 +224,70 @@ DojoAccess.DojoAccessor.prototype =
             }
             
             //diff versions of dojo..
-            return reg.length || reg._hash.length;
+            var len = reg.length || reg._hash.length;
+
+            if(!len) {                
+                //uff, event older version...
+                var count = 0;
+                reg.forEach(function(w) {
+                    count++;                    
+                });
+                len = count;
+            }
+            
+            return len;            
         },
 
+
+        /*
+         * to avoid problems with dojos older than 1.3.2 
+         */
+        _findWidgetsImpl: function(/*DomNode*/ root, dijit) {
+            // summary:
+            //      Search subtree under root returning widgets found.
+            //      Doesn't search for nested widgets (ie, widgets inside other widgets).
+
+            var outAry = [];
+
+            function getChildrenHelper(root){
+                for(var node = root.firstChild; node; node = node.nextSibling){
+                    if(node.nodeType == 1){
+                        var widgetId = node.getAttribute("widgetId");
+                        if(widgetId){
+                            var widget = dijit.byId(widgetId);
+                            if(widget){ // may be null on page w/multiple dojo's loaded
+                                outAry.push(widget);
+                            }
+                        }else{
+                            getChildrenHelper(node);
+                        }
+                    }
+                }
+            }
+
+            getChildrenHelper(root);
+            return outAry;
+        },        
+        
         /**
          * returns widgets inside the given widget  
          * @return array
          */
-        /*array*/findWidgets: function(widget, /*fbug context*/ context) {
+        /*array*/findWidgets: function(/*DomNode*/widget, /*fbug context*/ context) {
             var dijit = _dijit(context);
             if(!dijit) {
                 return [];
             }
 
-            if(!dijit.findWidgets) {
+            if(!dijit.registry) {
                 return [];
             }
 
-            return dijit.findWidgets(widget.domNode);
+            if(dijit.findWidgets) {
+                return dijit.findWidgets(widget);
+            } else {
+                return this._findWidgetsImpl(widget, dijit); 
+            }
         },
 
         /**
@@ -250,16 +296,7 @@ DojoAccess.DojoAccessor.prototype =
          */
         /*array*/getWidgetsRoots: function(/*fbug context*/ context) {
             
-            var dijit = _dijit(context);
-            if(!dijit) {
-                return [];
-            }
-
-            if(!dijit.findWidgets) {
-                return [];
-            }
-            var widgets = dijit.findWidgets(Wrapper.unwrapObject(context.window).document);            
-            return widgets; 
+           return this.findWidgets(Wrapper.unwrapObject(context.window).document, context);            
         },
 
         /**
@@ -311,15 +348,7 @@ DojoAccess.DojoAccessor.prototype =
         },
         
         /*boolean*/ hasWidgets: function(context) {
-            var dijit = _dijit(context);
-            if(!dijit) {
-                return false;
-            }
-            var registry = dijit.registry; //UNSECURE
-            if(!registry) {
-                return false;
-            }
-            return registry.length ? registry.length > 0 : registry._hash.length > 0;
+            return this.getDijitRegistrySize(context) > 0;
         },
         
         _toArray: function(/*WidgetSet*/ registry, /*function?*/filter) {
