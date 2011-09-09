@@ -279,7 +279,7 @@ define([
          removeConnection: function(/*Handle*/ handle) {
                 var con = this._disconnections.get(handle);
                 
-                if(con){
+                if(con) {
 
                     if(FBTrace.DBG_DOJO_DBG) {                        
                         FBTrace.sysout("DOJO DEBUG: removing connection", [handle, con]);
@@ -348,6 +348,10 @@ define([
                  return;
              }
              var subs = this._disconnections.get(handle);
+             
+             if(!subs) {
+                 return;
+             }               
              
              // Remove subscription
              var topic = subs.topic;
