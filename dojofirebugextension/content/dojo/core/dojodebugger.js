@@ -293,8 +293,16 @@ DojoDebugger.prototype =
                 return null;
             }
 
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DOJO getDebugInfoAboutCaller stackTrace: ", stackTrace);
+            }
+            
             var callerFrame = this._findCallerFrame(stackTrace, context, stackDepth);
-   
+
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DOJO getDebugInfoAboutCaller found callerFrame with stackDepth = " + stackDepth + " is: ", callerFrame);
+            }
+            
             var callerInfo = new DebugInfo();
             callerInfo.setFnName(callerFrame.fn);
             callerInfo.setScriptInfo(callerFrame.sourceFile, callerFrame.line);
@@ -303,11 +311,15 @@ DojoDebugger.prototype =
         },
         
         _findCallerFrame: function(stackTrace, context, stackDepth) {
-           var isChromebugActive = _stringInclude(stackTrace.frames[1].href, 'chrome://'); //hack!
-
-           stackDepth = this._computeChromeOffeset(isChromebugActive, stackDepth, stackTrace);
-           
-           var frame = stackTrace.frames[stackDepth];
+            var isChromebugActive = false;
+            var i = 0;
+            //$$HACK!
+            for(i = 0; !isChromebugActive && i < 3; i++) {
+                isChromebugActive = stackTrace.frames[i] && (_stringInclude(stackTrace.frames[i].href, 'chrome://') || _stringInclude(stackTrace.frames[i].href, 'resource://'));                
+            }           
+    
+            stackDepth = this._computeChromeOffeset(isChromebugActive, stackDepth, stackTrace);           
+            var frame = stackTrace.frames[stackDepth];
            
 
            /*
@@ -344,7 +356,7 @@ DojoDebugger.prototype =
             while (index <= stackDepth) {
                 
                 //HACK due to firefox not always returning prefix chrome:// for FF files...for example: firebug-service.js
-                if (!_stringInclude(stackTrace.frames[realIndex].href, 'chrome://') && !_stringInclude(stackTrace.frames[realIndex].href, '/modules/')) {
+                if (!_stringInclude(stackTrace.frames[realIndex].href, 'chrome://') && !_stringInclude(stackTrace.frames[realIndex].href, '/modules/') && !_stringInclude(stackTrace.frames[realIndex].href, 'resource://')) {
                       index++;
                 }
                 

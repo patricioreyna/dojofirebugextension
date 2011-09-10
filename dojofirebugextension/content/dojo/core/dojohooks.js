@@ -51,16 +51,10 @@ define([
         var version = DojoAccess.Version.prototype.fromDojoVersion(dojoVersion);
         var pivot = DojoAccess.Version.prototype.fromVersionString("1.7.0b5");
         if(version.compare(pivot, /*strict comparison*/true) >= 0) {
-            impl = new DojoHooks.DojoProxiesCreator17();
+            impl = new DojoHooks.DojoProxiesInitializer17();
         } else {
-            impl = new DojoHooks.DojoProxiesCreator();
-        }   
-
-//        if(FBTrace.DBG_DOJO) {
-//            FBTrace.sysout("given version: " + version, version);
-//            FBTrace.sysout("pivot version: " + pivot, pivot);
-//        }
-
+            impl = new DojoHooks.DojoProxiesInitializer();
+        }
         
         context.dojo.dojoHooks = impl;
         return impl;
@@ -71,12 +65,12 @@ define([
      * ****************************************************************************
      */    
     
-    DojoHooks.DojoProxiesCreator = function() {
+    DojoHooks.DojoProxiesInitializer = function() {
         if(FBTrace.DBG_DOJO) {
-            FBTrace.sysout("DOJO Default DojoProxiesCreator impl created");
+            FBTrace.sysout("DOJO Default DojoProxiesInitializer impl created");
         }
     };
-    DojoHooks.DojoProxiesCreator.prototype = 
+    DojoHooks.DojoProxiesInitializer.prototype = 
     {
 
             destroy: function() {
@@ -97,8 +91,7 @@ define([
 	               
 	               proxyFactory.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
 	                
-	               // FIXME Replace this hack fix for a communication mechanism
-                    // based on events.
+	               // FIXME Replace this hack fix for a communication mechanism based on events.
 	               DojoProxies.protectProxy(context, dojo, "_connect");
 	           }   
 
@@ -111,8 +104,7 @@ define([
 		        proxyFactory.proxyFunction(context, dojo, "dojo", 3, "subscribe", null, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
 		        proxyFactory.proxyFunction(context, dojo, "dojo", 1, "unsubscribe", this._proxyUnsubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
                 
-                // FIXME[BugTicket#91]: Replace this hack fix for a
-                // communication mechanism based on events.
+                // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
                 DojoProxies.protectProxy(context, '_connect', 'disconnect', 'subscribe', 'unsubscribe');
             },
 
@@ -239,12 +231,12 @@ define([
      * ****************************************************************************
      */    
     
-    DojoHooks.DojoProxiesCreator17 = function() {
+    DojoHooks.DojoProxiesInitializer17 = function() {
         if(FBTrace.DBG_DOJO) {
-            FBTrace.sysout("DOJO DojoProxiesCreator for dojo 1.7 created");
+            FBTrace.sysout("DOJO DojoProxiesInitializer for dojo 1.7 created");
         }
     };
-    DojoHooks.DojoProxiesCreator17.prototype = Obj.extend(DojoHooks.DojoProxiesCreator.prototype, {
+    DojoHooks.DojoProxiesInitializer17.prototype = Obj.extend(DojoHooks.DojoProxiesInitializer.prototype, {
 
 		onCompilationUnit: function (context, url, kind, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
 			if (!context.connectHooked && dojo && dojo.connect) {
@@ -268,17 +260,17 @@ define([
             var connectModule = require.modules['dojo/_base/connect'].result;
 
             // hook on connect AMD module's connect and others
-            proxyFactory.proxyFunction(context, connectModule, "connect.js", 5, /* "_connect" */"connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-            proxyFactory.proxyFunction(context, connectModule, "connect.js", 3, "subscribe", null, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
+            proxyFactory.proxyFunction(context, connectModule, "connect.js", 5, /* "_connect" */"connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth connect place*/2));
+            proxyFactory.proxyFunction(context, connectModule, "connect.js", 3, "subscribe", null, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth subscribe place*/2));
             proxyFactory.proxyFunction(context, connectModule, "connect.js", 1, "disconnect", this._proxyDisconnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
             proxyFactory.proxyFunction(context, connectModule, "connect.js", 1, "unsubscribe", this._proxyUnsubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
             // FIXME Replace this hack fix for a communication mechanism based on events.
             DojoProxies.protectProxy(context, connectModule, /* "_connect" */"connect", 'disconnect', 'subscribe', 'unsubscribe');
 
             // hook on dojo's connect
-            proxyFactory.proxyFunction(context, dojo, "dojo", 5, /* "_connect" */"connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
+            proxyFactory.proxyFunction(context, dojo, "dojo", 5, /* "_connect" */"connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth connect place*/0));
             proxyFactory.proxyFunction(context, dojo, "dojo", 1, "disconnect", this._proxyDisconnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
-            proxyFactory.proxyFunction(context, dojo, "dojo", 3, "subscribe", null, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
+            proxyFactory.proxyFunction(context, dojo, "dojo", 3, "subscribe", null, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth subscribe place*/0));
             proxyFactory.proxyFunction(context, dojo, "dojo", 1, "unsubscribe", this._proxyUnsubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);            
             // FIXME Replace this hack fix for a communication mechanism based on events.
             DojoProxies.protectProxy(context, /* "_connect" */"connect", 'disconnect', 'subscribe', 'unsubscribe');
@@ -297,12 +289,14 @@ define([
                 }
 
                 try {
-
-                    proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 2, "subscribe", null, this._proxySubscribeWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
+                    //Connect place Note: for dijits using _OnDijitClickMixin (i.e. all of them) we need to return 4 level depth frame 
+                    //as the caller function (TODO: for mobile widgets should be 3)
+                    proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 3, /* "_connect" */"connect", this._connectPreviousAdviceWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this._proxyConnectWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth connect place*/4));
+                    proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 2, "subscribe", null, this._proxySubscribeWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth subscribe place*/2));
                     proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 1, "unsubscribe", this._proxyUnsubscribeWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);                   
                     proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 1, "disconnect", this._proxyDisconnectWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
                     // FIXME Replace this hack fix for a communication mechanism based on events.
-                    DojoProxies.protectProxy(context, widgetBaseModule.result.prototype, 'subscribe', 'unsubscribe', 'disconnect');
+                    DojoProxies.protectProxy(context, widgetBaseModule.result.prototype, 'subscribe', 'unsubscribe', 'connect', 'disconnect');
 
                     if(FBTrace.DBG_DOJO) {
                         FBTrace.sysout("_WidgetBase wrapped successfully");
@@ -332,79 +326,79 @@ define([
 			return args;
 	    },
 	    
-	    _proxyConnect : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
+	    _proxyConnect : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForConnectPlace){
 
 	        if(FBTrace.DBG_DOJO_DBG) {
 	            FBTrace.sysout("DOJO creating _proxyConnect 17");
 	        }
-
-
-	        var self = this;
 	        
+	        var self = this;	        
 	        return function(ret, args) {
-
-			            if(FBTrace.DBG_DOJO_DBG) {                        
-			                FBTrace.sysout("DOJO DEBUG: connect 1.7 invoked with this args and result: ", { 'args':args, 'ret':ret});
-			            }
-
-			            // we need to normalize arguments (copied from dojo
-                        // connect)
-			            args = self._normalizeConnectArguments.apply(this, args);
-			            if(FBTrace.DBG_DOJO_DBG) {
-			                FBTrace.sysout("DOJO DEBUG: normalized arguments: ", args);
-			            }
-
-	                   // FIXME[BugTicket#91]: Defensive code to avoid
-                        // registering a connection made as part of a hack
-                        // solution.
-	                   if (args[3] && args[3].internalClass == 'dojoext-added-code') {
-				            if(FBTrace.DBG_DOJO_DBG) {                        
-				                FBTrace.sysout("DOJO DEBUG: returning from wrapper created wth proxyConnect since given method was proxy as well", { 'args':args, 'ret':ret});
-				            }
-
-	                       return ret; 
-	                   }
 	            
-	                   var obj =  Wrapper.unwrapObject(args[0] || dojo.global);            
-	                   var event = Wrapper.unwrapObject(args[1]); // can be a
-                                                                    // function
-                                                                    // (dojo
-                                                                    // 1.7)
+	            if(context.dojoextComingFromOtherProxy) {
+	                if(FBTrace.DBG_DOJO_DBG) {
+	                    FBTrace.sysout("DOJO coming from OtherProxy. Ignoring...");
+	                }
+	                return ret;
+	            }
 
-	                   /*
-                         * The context parameter could be null, in that case it
-                         * will be determined according to the dojo.hitch
-                         * implementation. See the dojo.hitch comment at [dojo
-                         * directory]/dojo/_base/lang.js and dojo.connect
-                         * comment at [dojo directory]/dojo/_base/connect.js
-                         */
-	                   var handlerContext = args[2];
-	                   if (!handlerContext) {
-	                      if (typeof(args[3]) == 'function') {
-	                           handlerContext = obj;
-	                      } else {
-	                           handlerContext = dojo.global;
-	                      }                   
-	                   }
-	                   handlerContext = Wrapper.unwrapObject(handlerContext);
-	                  
-	                   var method = Wrapper.unwrapObject(args[3]);
-	                   var dontFix = Wrapper.unwrapObject((args.length >= 5 && args[4]) ? args[4] : null);
+	            if(FBTrace.DBG_DOJO_DBG) {                        
+	                FBTrace.sysout("DOJO DEBUG: connect 1.7 invoked with this args and result: ", { 'args':args, 'ret':ret});
+	            }
 
-	                   var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutConnectCaller(context) : null;
-	                           
-	                   // Verify if the connection should be filtered.
-	                   if (DojoPrefs._isDojoAnimationsFilterEnabled() && 
-	                        self._filterConnection(obj, event, handlerContext, method, dojoAccess)) { 
-	                       return ret; 
-	                   }
-	                   
-	                   dojoTracker.addConnection(obj, event, handlerContext, method, dontFix, ret, callerInfo);
-	                   return ret;
-	                };
+	            // we need to normalize arguments (copied from dojo connect)
+	            args = self._normalizeConnectArguments.apply(this, args);
+	            if(FBTrace.DBG_DOJO_DBG) {
+	                FBTrace.sysout("DOJO DEBUG: normalized arguments: ", args);
+	            }
+
+               // FIXME[BugTicket#91]: Defensive code to avoid registering a connection made as part of a hack solution.
+               if (args[3] && args[3].internalClass == 'dojoext-added-code') {
+		            if(FBTrace.DBG_DOJO_DBG) {                        
+		                FBTrace.sysout("DOJO DEBUG: returning from wrapper created wth proxyConnect since given method was proxy as well", { 'args':args, 'ret':ret});
+		            }
+
+                   return ret; 
+               }
+        
+               var obj =  Wrapper.unwrapObject(args[0] || dojo.global);            
+               var event = Wrapper.unwrapObject(args[1]); // can be a function (dojo 1.7)
+
+               /*
+                 * The context parameter could be null, in that case it
+                 * will be determined according to the dojo.hitch
+                 * implementation. See the dojo.hitch comment at [dojo
+                 * directory]/dojo/_base/lang.js and dojo.connect
+                 * comment at [dojo directory]/dojo/_base/connect.js
+                 */
+               var handlerContext = args[2];
+               if (!handlerContext) {
+                  if (typeof(args[3]) == 'function') {
+                       handlerContext = obj;
+                  } else {
+                       handlerContext = dojo.global;
+                  }                   
+               }
+               handlerContext = Wrapper.unwrapObject(handlerContext);
+              
+               var method = Wrapper.unwrapObject(args[3]);
+               var dontFix = Wrapper.unwrapObject((args.length >= 5 && args[4]) ? args[4] : null);
+
+               stackDepthForConnectPlace = stackDepthForConnectPlace || 0;
+               var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutCaller(context, stackDepthForConnectPlace) : null;
+                       
+               // Verify if the connection should be filtered.
+               if (DojoPrefs._isDojoAnimationsFilterEnabled() && 
+                    self._filterConnection(obj, event, handlerContext, method, dojoAccess)) { 
+                   return ret; 
+               }
+               
+               dojoTracker.addConnection(obj, event, handlerContext, method, dontFix, ret, callerInfo);
+               return ret;
+            };
 	   },
 	   
-       _proxySubscribeWidgetBase : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
+       _proxySubscribeWidgetBase : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace) {
 
            if(FBTrace.DBG_DOJO_DBG) {
                FBTrace.sysout("DOJO creating proxySubscribeWidgetBase");
@@ -418,7 +412,8 @@ define([
                   FBTrace.sysout("DOJO executing subscribeWidgetBase This: ", this);
               }
 
-              var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutSubscribeCaller(context) : null;
+              stackDepthForSubPlace = stackDepthForSubPlace || 0;
+              var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutCaller(context, stackDepthForSubPlace) : null;
               var topic = Wrapper.unwrapObject(args[0]);
               var method = Wrapper.unwrapObject(args[1]);
               var scope = this; //the widget instance..                    
@@ -445,7 +440,67 @@ define([
              handle.dojoextComingFromUnsubscribe = true;
          };
       },
+
+      _connectPreviousAdviceWidgetBase: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker) {
+          if(FBTrace.DBG_DOJO_DBG) {
+              FBTrace.sysout("DOJO creating _connectPreviousAdviceWidgetBase");
+          }
+
+          return function(args) {
+              if(FBTrace.DBG_DOJO_DBG) {
+                  FBTrace.sysout("DOJO DEBUG executing _connectPreviousAdviceWidgetBase with arguments: ", args);
+              }
+
+              //add flag to avoid normal connect proxy to catch this as well.
+              //TODO beware with this code. Is there a potential problem of different connects? (multi-process?)
+              context.dojoextComingFromOtherProxy = true;              
+          }
+      },
+
       
+      _proxyConnectWidgetBase: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForConnectPlace) {
+          if(FBTrace.DBG_DOJO_DBG) {
+              FBTrace.sysout("DOJO creating _proxyConnectWidgetBase");
+          }
+
+          var self = this;
+          return function(ret, args) {
+              //args are: obj/*Object|null*/ , event/*string|function*/, method/*string|function*/
+              if(FBTrace.DBG_DOJO_DBG) {
+                  FBTrace.sysout("DOJO DEBUG executing _proxyConnectWidgetBase with this args and result: ", { 'args':args, 'ret':ret});
+              }
+              delete context.dojoextComingFromOtherProxy;
+
+
+             // FIXME[BugTicket#91]: Defensive code to avoid registering a connection made as part of a hack solution.
+             if (args[2] && args[2].internalClass == 'dojoext-added-code') {
+                  if(FBTrace.DBG_DOJO_DBG) {                        
+                      FBTrace.sysout("DOJO DEBUG: returning from wrapper created wth proxyConnect since given method was proxy as well", { 'args':args, 'ret':ret});
+                  }
+                 return ret; 
+             }
+      
+             var obj =  Wrapper.unwrapObject(args[0] || dojo.global);            
+             var event = Wrapper.unwrapObject(args[1]); // can be a function (dojo 1.7)
+             var handlerContext = this; //the widget instance
+             var method = Wrapper.unwrapObject(args[2]);
+             var dontFix = null;
+
+             stackDepthForConnectPlace = stackDepthForConnectPlace || 0;
+             var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutCaller(context, stackDepthForConnectPlace) : null;
+                     
+             // Verify if the connection should be filtered.
+             if (DojoPrefs._isDojoAnimationsFilterEnabled() && 
+                  self._filterConnection(obj, event, handlerContext, method, dojoAccess)) { 
+                 return ret; 
+             }
+             
+             dojoTracker.addConnection(obj, event, handlerContext, method, dontFix, ret, callerInfo);
+             return ret;
+          }
+      
+      },
+
       _proxyDisconnectWidgetBase : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
           if(FBTrace.DBG_DOJO_DBG) {
               FBTrace.sysout("DOJO creating _proxyDisconnectWidgetBase");
