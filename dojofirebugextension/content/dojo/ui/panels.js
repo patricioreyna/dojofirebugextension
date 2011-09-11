@@ -142,7 +142,8 @@ var DojoPanelMixin =  {
         // Check if the selected object is a connection event
         var /*IncomingConnectionsDescriptor*/ incDesc = this._getReferencedObjectFromNodeWithType(target, "dojo-eventFunction");
         if (incDesc){
-            items = items.concat(this._getFunctionContextMenuItems(incDesc.getEventFunction(), 'menuitem.breakon.event', incDesc.event));
+            var fnEventLabel = (typeof(incDesc.event) == "string") ? incDesc.event : null;
+            items = items.concat(this._getFunctionContextMenuItems(incDesc.getEventFunction(), 'menuitem.breakon.event', fnEventLabel));
         }
         
         // Check if the selected object is a connection target
@@ -196,8 +197,9 @@ var DojoPanelMixin =  {
         var listener = dojoDebugger.getDebugInfoAboutFunction(context, fnListener, fnListenerLabel);
 
         //info about original fn..
-        var fnModel = conn.getEventFunction();
-        var model = dojoDebugger.getDebugInfoAboutFunction(context, fnModel, conn.event);
+        var fnModel = conn.getEventFunction();        
+        var fnEventLabel = (typeof(conn.event) == "string") ? conn.event : null;
+        var model = dojoDebugger.getDebugInfoAboutFunction(context, fnModel, fnEventLabel);
         
         //info about place where the connection was made
         var caller = conn.callerInfo;

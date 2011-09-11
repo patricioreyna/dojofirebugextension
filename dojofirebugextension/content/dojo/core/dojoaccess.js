@@ -185,6 +185,7 @@ DojoAccess.DojoAccessor.prototype =
          * on this dojo version
          * @param context
          * @return int
+         * Method used with dojo versions previous to 1.7b5
          */
         /*int*/getStackTraceDepthForConnect: function(/*fbug context*/context) {
             
@@ -208,6 +209,7 @@ DojoAccess.DojoAccessor.prototype =
          * on this dojo version
          * @param context
          * @return int
+         * Method used with dojo versions previous to 1.7b5
          */
         /*int*/getStackTraceDepthForSubscribe: function(/*fbug context*/context) {
             return (_dojo(context).subscribe._listeners) ? 1 : 0;

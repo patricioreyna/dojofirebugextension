@@ -210,7 +210,7 @@ define([
          /** Add a connection */
          addConnection: function(
                      /*Object|null*/ obj, 
-                    /*String*/ event, 
+                    /*String|function*/ event, 
                     /*Object|null*/ context, 
                     /*String|Function*/ method,
                     /*Boolean*/ dontFix,
@@ -225,12 +225,18 @@ define([
                  var originalFunction = null;
                  try {
 
-                     //$$HACK if using dojo 1.7's connect based on 'advices', then we disable Break on Event.                     
-                     if(!obj[event] || obj[event]['after']) {
-                         originalFunction = null;
-                     } else {
-                         originalFunction = obj[event]['target'];  
-                     }                    
+                     if(event.call) {
+                         //event is a function (dojo 1.7) 
+                         originalFunction = event;
+                     } else {                     
+                         //event is string
+                         //$$HACK if using dojo 1.7's connect based on 'advices', then we disable Break on Event.                     
+                         if(!obj[event] || obj[event]['after']) {                            
+                             originalFunction = null;
+                         } else {
+                             originalFunction = obj[event]['target'];  
+                         }       
+                     }
                      
                  } catch (exc) {
                      //should not be here...
@@ -661,7 +667,7 @@ define([
         this.object = object;
          
         // Incoming connections (map<String, IncomingConnectionsForEvent>).
-        this._incomingConnections = new Collections.StringMap();
+        this._incomingConnections = new Collections.ComposedDictionary();
         this._incomingConnectionsCount = 0;
         
         // Outgoing connections (Dictionary<(String|Function),Connection>).
@@ -850,8 +856,8 @@ define([
      /**
       * @class Connection
       */
-     var Connection = DojoModel.Connection = function(obj, /*string*/event, context, method, originalFunction, dontFix, listenerMechanism, callerInfo){
-         this.clazz = "Connection";  
+     var Connection = DojoModel.Connection = function(obj, /*string|function*/event, context, method, originalFunction, dontFix, listenerMechanism, callerInfo){
+         this.clazz = "Connection";
          this.obj = obj;
          this.event = event;
          this.context = context;
@@ -920,13 +926,21 @@ define([
             return criteriaObject(a.obj, b.obj);
         };
         
-        var criteriaEvent = function(a,b){
-            if (a.event < b.event) {
-                return -1;
-            } else if (a.event > b.event) {
-                return 1;
+        var criteriaEvent = function(a,b) {
+            var typeA = typeof(a.event);
+            var typeB = typeof(b.event);
+            if (typeA == typeB) {
+                var valueA = (typeA == 'function') ? a.event.toString() : a.event;
+                var valueB = (typeB == 'function') ? b.event.toString() : b.event;
+                if (valueA < valueB) {
+                    return -1;
+                } else if (valueA > valueB) {
+                    return 1;
+                } else {
+                    return 0;
+                }
             } else {
-                return 0;
+                return (typeA == 'function') ? 1 : -1;
             }
         };
         

@@ -24,11 +24,12 @@ define([
         "firebug/lib/lib",
         "firebug/lib/locale",
         "firebug/lib/object",
+        "firebug/lib/trace",
         "dojo/core/dojoaccess",
         "dojo/core/dojomodel",
         "dojo/core/prefs",
         "dojo/lib/collections",
-       ], function dojoRepsFactory(FirebugReps, Firebug, StackFrame, Css, Dom, Domplate, Events, FBL, Locale, Obj, DojoAccess, DojoModel, DojoPrefs, Collections)
+       ], function dojoRepsFactory(FirebugReps, Firebug, StackFrame, Css, Dom, Domplate, Events, FBL, Locale, Obj, FBTrace, DojoAccess, DojoModel, DojoPrefs, Collections)
 {
 with(Domplate) {
 
@@ -50,7 +51,7 @@ var getRep = function(value) {
 
 var getMethodLabel = DojoReps.getMethodLabel = function(method) {
     
-    // TODO: method should not be undefined, but it happens. Alert this situation.
+    // FIXME: method should not be undefined, but it happens. Alert about this situation.
     if(!method) {
         return "undefined"; 
     }
@@ -66,7 +67,7 @@ var getMethodLabel = DojoReps.getMethodLabel = function(method) {
             label = script ? StackFrame.getFunctionName(script, Firebug.currentContext) : method.name;
         } catch(exc) {
             //$$HACK
-            label = method.name;
+            label = method.name; //TODO can we change by displayName in newer versions of Firebug?
         }
     }
     return label + ((label.indexOf(')') != -1) ? "" : "()");
@@ -280,7 +281,7 @@ DojoReps.ConnectionRep = domplate(FirebugReps.Obj,
     tagOutgoing: SPAN(
             TAG("$object.obj|getRep", {object: "$object.obj", className: "object"}),
             " -> ",
-            SPAN("$object.event")
+            SPAN("$object.event|getMethodLabel")
         ),
     tagIncomming: SPAN(
             TAG("$object.context|getRep", {object: "$object.context", className: "object"}),
@@ -291,7 +292,7 @@ DojoReps.ConnectionRep = domplate(FirebugReps.Obj,
             SPAN({"class": "inline-connection"}, "connection("),
             TAG(FirebugReps.OBJECTLINK("$object"), {object: "$object.obj", className: "object"}),
             SPAN({"class": "inline-connection"}, "->"),
-            SPAN({"class": "inline-event"}, "$object.event"), //string
+            SPAN({"class": "inline-event"}, "$object.event|getMethodLabel"), //string|function
             SPAN({"class": "inline-connection"}, ")==>"),
             SPAN({"class": "inline-connection"}, "Exec:("),
             TAG(FirebugReps.OBJECTLINK("$object"), {object: "$object.context", className: "object"}),
@@ -390,7 +391,7 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
                         FOR("incCon", "$object|incommingConnectionsIterator",
                             DIV({"class": "collapsable-container container-opened"},
                                 DIV({"class": "collapsable-label", onclick: "$onContainerClick"},
-                                    DIV({"class": "event dojo-eventFunction", _referencedObject: "$incCon"}, "$incCon.event $incCon.connections|getNumberOfItemsIfNeeded")
+                                    DIV({"class": "event dojo-eventFunction", _referencedObject: "$incCon"}, "$incCon.event|getMethodLabel $incCon.connections|getNumberOfItemsIfNeeded")
                                 ),
                                 DIV({"class": "collapsable-content"},
                                     FOR("con", "$incCon.connections",
@@ -487,13 +488,14 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
     },
     getRep: getRep,
     onContainerClick: onContainerClick,
-    toggleContainer: toggleContainer
+    toggleContainer: toggleContainer,
+    getMethodLabel:getMethodLabel
 });
 
 /**
  * @class IncomingConnectionsDescriptor
  */
-var IncomingConnectionsDescriptor = DojoReps.IncomingConnectionsDescriptor = function(obj, /*string*/event, /*array*/connections){
+var IncomingConnectionsDescriptor = DojoReps.IncomingConnectionsDescriptor = function(obj, /*string|function*/event, /*array*/connections){
      this.obj = obj;
      this.event = event;
      this.connections = connections;
@@ -582,7 +584,7 @@ DojoReps.ConnectionsTableRep = domplate(
                                     TD({"class":"dojo-conn-obj dojo-tracked-obj", _referencedObject: "$con.obj"},
                                         TAG("$con.obj|getRep", {object: "$con.obj", className: "object"})
                                     ),
-                                    TD({"class": "dojo-conn-event", _referencedObject: "$con.event"}, "$con.event"
+                                    TD({"class": "dojo-conn-event", _referencedObject: "$con.event"}, "$con.event|getMethodLabel"
                                     ),
                                     TD({"class":"dojo-conn-context dojo-tracked-obj", _referencedObject: "$con.context"},
                                         TAG("$con.context|getRep", {object: "$con.context", className: "object"})
