@@ -404,7 +404,7 @@ DojoAccess.DojoAccessor.prototype =
 
             res = res || false;
             if(FBTrace.DBG_DOJO_DBG) {
-                FBTrace.sysout("DOJO DEBUG isDojoAnimation: " + res, {'param':object, 'result': res});
+                FBTrace.sysout("DOJO DEBUG isDojoAnimation: " + (res !== false), {'param':object, 'result': res});
             }
 
             return res;

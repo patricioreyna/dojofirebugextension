@@ -1329,7 +1329,7 @@ DojoPanels.DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
     
     _updateCounter: function(counterNode, number) {
         if (counterNode) {
-            counterNode.innerHTML = number;
+            counterNode.textContent = number;
         }
     },
     
