@@ -12,14 +12,17 @@
 // TODO: Replace with your <ext-id>
 var extensionName = "dojofirebugextension"; 
 
+var waits = 0;
 // ********************************************************************************************* //
 
 if (!Firebug || !Firebug.getModuleLoaderConfig)
 {
     if(FBTrace) {
         FBTrace.sysout("Firebug Overlay; 'chrome://firebug/content/moduleConfig.js' must be included!");
-        return;
     }
+    
+    Components.utils.reportError("Firebug Overlay; 'chrome://firebug/content/moduleConfig.js' must be included!");    
+    return;
 }
 
 var config = Firebug.getModuleLoaderConfig();
@@ -31,29 +34,56 @@ config.onDebug = function() {
 }
 */
 
-// Load main.js module (the entry point of the extension) + a support for tracing.
-Firebug.require(config, [
-    extensionName + "/main",
-    "firebug/lib/trace"
-],
-function(Extension, FBTrace)
-{
-    try
-    {
-        // Initialize the extension object. Extension intialization procedure
-        // should be within this method (in main.js).
-        Extension.initialize();
+logMsg = function(aMessage) {
+    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+                                   .getService(Components.interfaces.nsIConsoleService);
+    consoleService.logStringMessage("DojoFirebugExtension AMD Loader - " + aMessage);
+};
 
-        if (FBTrace.DBG_INITIALIZE)
-            FBTrace.sysout("Firebug Overlay; Extension '" + extensionName + "' loaded!");
+checkFirebugRequireIsLoaded = function() {
+    //Components.utils.reportError("DojoExtensionAsynchLoader - executing checkFirebugRequireIsLoaded . Times: " + waits);
+    logMsg("executing checkFirebugRequireIsLoaded . Times: " + waits);
+    waits += 1;
+    if (!Firebug.require) {
+        setTimeout(checkFirebugRequireIsLoaded, 10);
+    } else {
+        loadExtension();
     }
-    catch (err)
-    {
-        if (FBTrace.DBG_ERRORS)
-            FBTrace.sysout("Firebug Overlay; ERROR " + err);
-    }
-});
 
+};
+
+loadExtension = function() {
+    
+    //Components.utils.reportError("DojoExtensionAsynchLoader - executing loadExtension");
+    logMsg("executing loadExtension");
+
+    // Load main.js module (the entry point of the extension) + a support for tracing.
+    Firebug.require(config, [
+        extensionName + "/main",
+        "firebug/lib/trace"
+    ],
+        function(Extension, FBTrace)
+        {
+            try
+            {
+                // Initialize the extension object. Extension intialization procedure
+                // should be within this method (in main.js).
+                Extension.initialize();
+    
+                if (FBTrace.DBG_INITIALIZE)
+                    FBTrace.sysout("Firebug Overlay; Extension '" + extensionName + "' loaded!");
+            }
+            catch (err)
+            {
+                if (FBTrace.DBG_ERRORS)
+                    FBTrace.sysout("Firebug Overlay; ERROR " + err);
+            }
+        }
+    );
+};
+
+
+checkFirebugRequireIsLoaded();
 return {};
 
 // ********************************************************************************************* //
