@@ -17,7 +17,7 @@
     <!-- Firefox page context menu -->
     <menupopup id="contentAreaContextMenu">
         <menuitem id="fbDojo_menu_dojofirebugextension_inspect" insertafter="menu_firebugInspect" label="&window.contextmenuitem.inspect;"
-                  command="cmd_dojofirebugextension_inspect" class="menuitem-iconic fbInternational" />
+                  command="cmd_dojofirebugextension_inspect" class="menuitem-iconic fbInternational" hidden="true"/>
     </menupopup>    
 
     <commandset id="mainCommandSet">
@@ -63,7 +63,7 @@
 	                Filter:
 	                <vbox flex="40">
 	                    <spacer flex="1"/>
-	                    <textbox id="fbDojo_dojoConnFilterBox" type="dojoConnFilterBox"/>
+	                    <textbox id="fbDojo_dojoConnFilterBox" type="dojoConnFilterBox" placeholder="type query here"/>
 	                    <spacer flex="1"/>
 	                </vbox>
 	                <button id="fbDojo_dojoApplyFilterButton" label="Apply"

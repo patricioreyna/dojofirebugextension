@@ -36,7 +36,7 @@ define([
     
     var DojoExtension = {};
     
-    var VERSION = "1.1.0";
+    var VERSION = "1.1.1";
     
     /**
      * returns the DojoAccessor service.
@@ -91,14 +91,11 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     },
         
     initialize: function() {
-        
-        Firebug.ActivableModule.initialize.apply(this, arguments);      
-        
-        if (this.isExtensionEnabled() && Firebug.connection) {
-            Firebug.connection.addListener(this);
-        }
-        
-        this._registerContextMenuListener();
+        Firebug.ActivableModule.initialize.apply(this, arguments);        
+    },
+    
+    shutdown: function() {
+        Firebug.ActivableModule.shutdown.apply(this, arguments);        
     },
     
     //firebug contextmenu inspect related methods
@@ -109,6 +106,17 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
             contextMenu.addEventListener("popupshowing", this._onContentAreaContextMenuShowing, false);
         }
     },
+
+    _unregisterContextMenuListener: function() {
+        var contextMenu = document.getElementById("contentAreaContextMenu");
+        if (contextMenu) {
+            contextMenu.removeEventListener("popupshowing", this._onContentAreaContextMenuShowing, false);
+        }
+        
+        var inspectItem = document.getElementById("fbDojo_menu_dojofirebugextension_inspect");
+        inspectItem.hidden = true;
+    },
+
     
     _onContentAreaContextMenuShowing: function(event) {
         var inspectItem = document.getElementById("fbDojo_menu_dojofirebugextension_inspect");
@@ -142,14 +150,6 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     },
     
     //end of firebug contextmenu inspect related methods
-    
-    shutdown: function() {
-        Firebug.ActivableModule.shutdown.apply(this, arguments);
-        if (Firebug.connection) {
-            //Firebug.Debugger.removeListener(this);
-            Firebug.connection.removeListener(this);
-        }
-    },
     
     initContext: function(context, persistedState) {
         Firebug.ActivableModule.initContext.apply(this, arguments);
@@ -317,6 +317,10 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
    // Activation logic
    
    onObserverChange: function(observer) {
+       if(FBTrace.DBG_DOJO) {
+           FBTrace.sysout("DOJO - onObserverChange");
+       }
+
        Firebug.ActivableModule.onObserverChange.apply(this, arguments);
        
        if(!this.hasObservers()) {
@@ -335,6 +339,20 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
        if(this.extensionLoaded) {
            return;
        }
+
+       if(FBTrace.DBG_DOJO) {
+           FBTrace.sysout("DOJO - enableExtension");
+       }
+
+       if (this.isExtensionEnabled() && Firebug.connection) {
+           if(FBTrace.DBG_DOJO) {
+               FBTrace.sysout("DOJO - adding arch/browser listener");
+           }           
+           Firebug.connection.addListener(this);
+       }
+
+       //FF main context menu 
+       this._registerContextMenuListener();
        
        //FIXME remove this dependency!       
        DojoReps.registerReps();
@@ -344,14 +362,28 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
    },
    
    disableExtension: function() {
-     //TODO probably will need to fire event and execute this on UI side
+       //TODO probably will need to fire event and execute this on UI side
        if(!this.extensionLoaded) {
            return;
        }
 
+       if(FBTrace.DBG_DOJO) {
+           FBTrace.sysout("DOJO - disableExtension");
+       }
+
        //FIXME remove this dependency!
        DojoReps.unregisterReps();
+
+       //FF main context menu 
+       this._unregisterContextMenuListener();
        
+       if (Firebug.connection) {
+           if(FBTrace.DBG_DOJO) {
+               FBTrace.sysout("DOJO - removing arch/browser listener");
+           }           
+           Firebug.connection.removeListener(this);
+       }
+              
        //last step
        this.extensionLoaded = false;
    },
