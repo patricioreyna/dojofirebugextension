@@ -28,12 +28,6 @@ define([
     var DOJO_BUNDLE = "fbDojo_dojostrings";    
     var DOJO_EXT_CSS_URL = "chrome://dojofirebugextension/skin/dojofirebugextension.css";
     
-    //Extend string bundle with new strings for this extension.
-    //This must be done yet before domplate definitions.
-    if (Firebug.registerStringBundle) {
-        Firebug.registerStringBundle("chrome://dojofirebugextension/locale/dojo.properties");    
-    }
-
 
     var UI = {};
 

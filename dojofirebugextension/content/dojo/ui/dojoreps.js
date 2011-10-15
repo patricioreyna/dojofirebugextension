@@ -37,6 +37,11 @@ var DojoReps = {};
 
 //FIXME XXXpreyna need to use the UI.DOJO_BUNDLE constant. Cannot do it now, because of a circular dependency.
 var DOJO_BUNDLE = "fbDojo_dojostrings";    
+//Extend string bundle with new strings for this extension.
+//This must be done yet before domplate definitions.
+if (Firebug.registerStringBundle) {
+    Firebug.registerStringBundle("chrome://dojofirebugextension/locale/dojo.properties");    
+}
     
 //****************************************************************
 // GENERAL FUNCTIONS
