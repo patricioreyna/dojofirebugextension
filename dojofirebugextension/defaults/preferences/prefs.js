@@ -1,4 +1,8 @@
+
+//Activation
 pref("extensions.firebug.dojofirebugextension.enableSites", false);
+
+//Global
 pref("extensions.firebug.dojofirebugextension.useHashCodes", true);
 pref("extensions.firebug.dojofirebugextension.breakPointPlaceDisabled", true);
 pref("extensions.firebug.dojofirebugextension.useHTMLEventBasedProxy", false);
@@ -7,5 +11,6 @@ pref("extensions.firebug.dojofirebugextension.maxAllowedNumberOfSubscriptionsInT
 pref("extensions.firebug.dojofirebugextension.displayWidgetsAsTree", true);
 pref("extensions.firebug.dojofirebugextension.dojoAnimationsFilter", true);
 
+//Firebug tracing support
 pref("extensions.firebug.DBG_DOJO", false);
 pref("extensions.firebug.DBG_DOJO_DBG", false);

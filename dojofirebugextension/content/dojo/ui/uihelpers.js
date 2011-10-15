@@ -19,20 +19,21 @@ define([
        ], function dojoUIHelperFactory(Firebug, Css, Dom, DojoReps)
 {
 
-const Ci = Components.interfaces;
-const nsIInterfaceRequestor = Ci.nsIInterfaceRequestor;
-const nsISelectionDisplay = Ci.nsISelectionDisplay;
-const nsISelectionController = Ci.nsISelectionController;
-
-//the name of our strings bundle
-var DOJO_BUNDLE = "fbDojo_dojostrings";    
-var DOJO_EXT_CSS_URL = "chrome://dojofirebugextension/skin/dojofirebugextension.css";
+    const Ci = Components.interfaces;
+    const nsIInterfaceRequestor = Ci.nsIInterfaceRequestor;
+    const nsISelectionDisplay = Ci.nsISelectionDisplay;
+    const nsISelectionController = Ci.nsISelectionController;
     
-//  //are we on top of FF4?
-//  var appInfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULAppInfo);
-//  var versionChecker = Cc["@mozilla.org/xpcom/version-comparator;1"].getService(Ci.nsIVersionComparator);
-//
-//  var isFF4 = (versionChecker.compare(appInfo.version, "4.0*") >= 0);
+    //the name of our strings bundle
+    var DOJO_BUNDLE = "fbDojo_dojostrings";    
+    var DOJO_EXT_CSS_URL = "chrome://dojofirebugextension/skin/dojofirebugextension.css";
+    
+    //Extend string bundle with new strings for this extension.
+    //This must be done yet before domplate definitions.
+    if (Firebug.registerStringBundle) {
+        Firebug.registerStringBundle("chrome://dojofirebugextension/locale/dojo.properties");    
+    }
+
 
     var UI = {};
 
