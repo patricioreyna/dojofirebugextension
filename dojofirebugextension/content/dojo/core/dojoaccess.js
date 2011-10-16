@@ -733,7 +733,12 @@ Version.prototype = {
             } else if(strict && this.patch != anotherVersion.patch) {
                 return this.patch - anotherVersion.patch;
             } else if(strict && this.flag != anotherVersion.flag) {
-                return this.flag - anotherVersion.flag;
+                myFlag = this.flag.replace('alpha', 'a', "g");
+                myFlag = this.flag.replace('beta', 'b', "g");             
+                anotherFlag = anotherVersion.flag.replace('alpha', 'a', "g");
+                anotherFlag = anotherVersion.flag.replace('beta', 'b', "g");
+                
+                return myFlag.localeCompare(anotherFlag);
             }
             return 0;
         }

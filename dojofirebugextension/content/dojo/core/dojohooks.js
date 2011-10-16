@@ -4,6 +4,7 @@
 /**
  * dojo hooks. Hooks into dojo (e.g connect and subscribe operations) and
  * creates proxies to gather information from app usage.
+ * There is a hierarchy to cope with the different dojo versions.
  * 
  * @author preyna@ar.ibm.com
  */
@@ -18,6 +19,13 @@ define([
        ], function dojoHooksFactory(FBL, Obj, FBTrace, Wrapper, DojoAccess, DojoPrefs, DojoProxies)
 {
     var DojoHooks = {};
+
+//    logMsg = function(aMessage) {
+//        var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+//                                       .getService(Components.interfaces.nsIConsoleService);
+//        consoleService.logStringMessage("DojoHooks - " + aMessage);
+//    };
+
     
     /***************************************************************************
      * ****************************************************************************
@@ -47,12 +55,23 @@ define([
             FBTrace.sysout("DOJO dojo.version: "+ dojoVersion, dojoVersion);
         }
 
+//        logMsg("DOJO DojoProxiesInitializer about to compare");
         var impl;
         var version = DojoAccess.Version.prototype.fromDojoVersion(dojoVersion);
+       
         var pivot = DojoAccess.Version.prototype.fromVersionString("1.7.0b5");
+        var pivot17PreDojoBeta5 = DojoAccess.Version.prototype.fromVersionString("1.7.0b1");
+        
+//        logMsg("DOJO version is : " + version.toString());
+        
         if(version.compare(pivot, /*strict comparison*/true) >= 0) {
+//            logMsg("DOJO DojoProxiesInitializer chosen 17");
             impl = new DojoHooks.DojoProxiesInitializer17();
+        } else if(version.compare(pivot17PreDojoBeta5, /*strict comparison*/true) >= 0) {
+//            logMsg("DOJO DojoProxiesInitializer chosen patch");
+            impl = new DojoHooks.DojoProxiesInitializer17PreBeta5();
         } else {
+//            logMsg("DOJO DojoProxiesInitializer chosen default");
             impl = new DojoHooks.DojoProxiesInitializer();
         }
         
@@ -64,7 +83,7 @@ define([
      * ****************************************************************************
      * ****************************************************************************
      */    
-    
+   //connect/subscribe methods are defined in dojo/_base/connect, dojo/_base/event and dijit/_Widget (v1.5)
     DojoHooks.DojoProxiesInitializer = function() {
         if(FBTrace.DBG_DOJO) {
             FBTrace.sysout("DOJO Default DojoProxiesInitializer impl created");
@@ -84,25 +103,25 @@ define([
                     this.injectProxies(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
                 }
 
-	           // Check if the _connect function was overwritten by event.js
+               // Check if the _connect function was overwritten by event.js
                 // new connect definition . (no need in dojo 1.7)
-	           if (context.connectHooked && (!context.connectREHOOKED) && !DojoProxies.isDojoExtProxy(dojo._connect) && !dojo._connect._listeners) {
-	               context.connectREHOOKED = true;
-	               
-	               proxyFactory.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-	                
-	               // FIXME Replace this hack fix for a communication mechanism based on events.
-	               DojoProxies.protectProxy(context, dojo, "_connect");
-	           }   
+               if (context.connectHooked && (!context.connectREHOOKED) && !DojoProxies.isDojoExtProxy(dojo._connect) && !dojo._connect._listeners) {
+                   context.connectREHOOKED = true;
+                   
+                   proxyFactory.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
+                    
+                   // FIXME Replace this hack fix for a communication mechanism based on events.
+                   DojoProxies.protectProxy(context, dojo, "_connect");
+               }   
 
             },
             
             injectProxies: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
 
-		        proxyFactory.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-		        proxyFactory.proxyFunction(context, dojo, "dojo", 1, "disconnect", this._proxyDisconnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
-		        proxyFactory.proxyFunction(context, dojo, "dojo", 3, "subscribe", null, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-		        proxyFactory.proxyFunction(context, dojo, "dojo", 1, "unsubscribe", this._proxyUnsubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
+                proxyFactory.proxyFunction(context, dojo, "dojo", 5, "_connect", null, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, dojo, "dojo", 1, "disconnect", this._proxyDisconnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
+                proxyFactory.proxyFunction(context, dojo, "dojo", 3, "subscribe", null, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, dojo, "dojo", 1, "unsubscribe", this._proxyUnsubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
                 
                 // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
                 DojoProxies.protectProxy(context, '_connect', 'disconnect', 'subscribe', 'unsubscribe');
@@ -118,14 +137,22 @@ define([
             
             _proxyConnect : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker) {
 
-		        if(FBTrace.DBG_DOJO_DBG) {
-		            FBTrace.sysout("DOJO creating proxyConnect", {'dojoAccess':dojoAccess, 'dojoTracker': dojoTracker, 'dojoDebugger':dojoDebugger});
-		            
-		        }
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO creating proxyConnect", {'dojoAccess':dojoAccess, 'dojoTracker': dojoTracker, 'dojoDebugger':dojoDebugger});
+                    
+                }
 
-		        var self = this;
-		        return function(ret, args) {
+                var self = this;
+                return function(ret, args) {
 
+                    if(context.dojoextComingFromOtherProxy) {
+                        if(FBTrace.DBG_DOJO_DBG) {
+                            FBTrace.sysout("DOJO coming from OtherProxy. Ignoring...");
+                        }
+                        return ret;
+                    }
+                    
+                    
                    // FIXME[BugTicket#91]: Defensive code to avoid registering
                     // a connection made as part of a hack solution.
                    if (args[3] && args[3].internalClass == 'dojoext-added-code') {
@@ -168,27 +195,35 @@ define([
                 };
             },
 
-		   _proxyDisconnect : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
-		        if(FBTrace.DBG_DOJO_DBG) {
-		            FBTrace.sysout("DOJO creating proxyDisconnect");
-		        }
+           _proxyDisconnect : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO creating proxyDisconnect");
+                }
 
-		        return function(handle) {
-		            if(FBTrace.DBG_DOJO_DBG) {
-	                    FBTrace.sysout("DOJO DEBUG executing proxyDisconnect with arguments: ", arguments);
-	                }
+                return function(handle) {
+                    if(FBTrace.DBG_DOJO_DBG) {
+                        FBTrace.sysout("DOJO DEBUG executing proxyDisconnect with arguments: ", arguments);
+                    }
 
-		            dojoTracker.removeConnection(Wrapper.unwrapObject(handle));
-		        };
-		   },
+                    dojoTracker.removeConnection(Wrapper.unwrapObject(handle));
+                };
+           },
 
-		   _proxySubscribe : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
+           _proxySubscribe : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
 
-		        if(FBTrace.DBG_DOJO_DBG) {
-		            FBTrace.sysout("DOJO creating proxySubscribe");
-		        }
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO creating proxySubscribe");
+                }
 
-		       return function(ret, args) {
+               return function(ret, args) {
+                   
+                   if(context.dojoextComingFromOtherProxy) {
+                        if(FBTrace.DBG_DOJO_DBG) {
+                            FBTrace.sysout("DOJO coming from OtherProxy. Ignoring...");
+                        }
+                        return ret;
+                    }
+                   
                    var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutSubscribeCaller(context) : null;
                    var scope = Wrapper.unwrapObject(args[1]);
                    var method = Wrapper.unwrapObject(args[2]);                    
@@ -208,29 +243,209 @@ define([
                    dojoTracker.addSubscription(topic, scope, method, ret, callerInfo);
                    return ret;
               };
-		   },
-		  
-		   _proxyUnsubscribe : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
-		        if(FBTrace.DBG_DOJO_DBG) {
-		            FBTrace.sysout("DOJO creating proxyUnsubscribe");
-		        }
+           },
+          
+           _proxyUnsubscribe : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO creating proxyUnsubscribe");
+                }
 
-			   return function(handle) {
-			       if(FBTrace.DBG_DOJO_DBG) {
-			           FBTrace.sysout("DOJO DEBUG executing proxyUnsubscribe with arguments: ", arguments);
-			       }
+               return function(handle) {
+                   if(FBTrace.DBG_DOJO_DBG) {
+                       FBTrace.sysout("DOJO DEBUG executing proxyUnsubscribe with arguments: ", arguments);
+                   }
 
-			       dojoTracker.removeSubscription(Wrapper.unwrapObject(handle));
-		       };
-		   }
+                   dojoTracker.removeSubscription(Wrapper.unwrapObject(handle));
+               };
+           }
     };
 
+    /***************************************************************************
+     * ****************************************************************************
+     * ****************************************************************************
+     */    
+    //connect/subscribe methods are defined in dojo/_base/connect and dijit/_WidgetBase
+    //FIXME do some refactoring . There is duplicated code in this class and DojoProxiesInitializer17 class. 
+    DojoHooks.DojoProxiesInitializer17PreBeta5 = function() {
+        if(FBTrace.DBG_DOJO) {
+            FBTrace.sysout("DOJO DojoProxiesInitializer for dojo 1.7 [beta1, beta5) created");
+        }
+//        logMsg("DOJO DojoProxiesInitializer for dojo 1.7 [beta1, beta5) created");
+    };
+    DojoHooks.DojoProxiesInitializer17PreBeta5.prototype = Obj.extend(DojoHooks.DojoProxiesInitializer.prototype, {
+
+        onCompilationUnit: function (context, url, kind, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+
+            DojoHooks.DojoProxiesInitializer.prototype.onCompilationUnit.apply(this, arguments);
+            
+            //let's wrap _WidgetBase functions (connect, subscribe..) as well ..
+            this.injectProxiesWidgetBase(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+        },
+        
+        injectProxiesWidgetBase: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+            
+            var require = Wrapper.unwrapObject(context.window).require;
+            var widgetBaseModule = require.modules['dijit*_WidgetBase'];
+            
+            if(!context.widgetBaseModuleWrapped && widgetBaseModule && widgetBaseModule.executed && widgetBaseModule.executed.value == 'executed') {
+                context.widgetBaseModuleWrapped = true;
+                
+//                logMsg("about to wrap dijit._WidgetBase. widgetBaseModule is: " + widgetBaseModule);
+                
+                if(FBTrace.DBG_DOJO) {
+                    FBTrace.sysout("about to wrap dijit._WidgetBase. widgetBaseModule is: ", widgetBaseModule);
+                }
+
+                try {
+                    //Connect place Note: for dijits using _OnDijitClickMixin (i.e. all of them) we need to return 4 level depth frame 
+                    //as the caller function (TODO: for mobile widgets should be 3)
+                    proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 3, /* "_connect" */"connect", this._connectPreviousAdviceWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this._proxyConnectWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth connect place*/4));
+                    proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 2, "subscribe", this._connectPreviousAdviceWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this._proxySubscribeWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth subscribe place*/2));
+                    proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 1, "unsubscribe", this._proxyUnsubscribeWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);                   
+                    proxyFactory.proxyFunction(context, widgetBaseModule.result.prototype, "_WidgetBase.js", 1, "disconnect", this._proxyDisconnectWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), null);
+                    // FIXME Replace this hack fix for a communication mechanism based on events.
+                    DojoProxies.protectProxy(context, widgetBaseModule.result.prototype, 'subscribe', 'unsubscribe', 'connect', 'disconnect');
+
+                    if(FBTrace.DBG_DOJO) {
+                        FBTrace.sysout("_WidgetBase wrapped successfully");
+                    }
+
+                } catch(e) {
+                    FBTrace.sysout("error while trying to inject wrappers to _WidgetBase.js: ", e);
+                }
+            }           
+        },
+            
+        _proxySubscribeWidgetBase : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace) {
+
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO creating proxySubscribeWidgetBase");
+            }
+
+           return function(ret, args) {
+
+               if(FBTrace.DBG_DOJO_DBG) {
+                   FBTrace.sysout("DOJO executing subscribeWidgetBase Ret: ", ret);
+                   FBTrace.sysout("DOJO executing subscribeWidgetBase Args: ", args);
+                   FBTrace.sysout("DOJO executing subscribeWidgetBase This: ", this);
+               }
+
+               stackDepthForSubPlace = stackDepthForSubPlace || 0;
+               var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutCaller(context, stackDepthForSubPlace) : null;
+               var topic = Wrapper.unwrapObject(args[0]);
+               var method = Wrapper.unwrapObject(args[1]);
+               var scope = this; //the widget instance..                    
+                                                        
+               dojoTracker.addSubscription(topic, scope, method, ret, callerInfo);
+
+               return ret;
+          };
+       },
+             
+       _proxyUnsubscribeWidgetBase : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker){
+           if(FBTrace.DBG_DOJO_DBG) {
+               FBTrace.sysout("DOJO creating _proxyUnsubscribeWidgetBase");
+           }
+
+          return function(handle) {
+              if(FBTrace.DBG_DOJO_DBG) {
+                  FBTrace.sysout("DOJO DEBUG executing _proxyUnsubscribeWidgetBase with arguments: ", arguments);
+              }
+              
+              dojoTracker.removeSubscription(Wrapper.unwrapObject(handle));
+              
+              //add flag to avoid disconnect to catch this as well.
+              handle.dojoextComingFromUnsubscribe = true;
+          };
+       },
+
+       _connectPreviousAdviceWidgetBase: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker) {
+           if(FBTrace.DBG_DOJO_DBG) {
+               FBTrace.sysout("DOJO creating _connectPreviousAdviceWidgetBase");
+           }
+
+           return function(args) {
+               if(FBTrace.DBG_DOJO_DBG) {
+                   FBTrace.sysout("DOJO DEBUG executing _connectPreviousAdviceWidgetBase with arguments: ", args);
+               }
+
+               //add flag to avoid normal connect proxy to catch this as well.
+               //TODO beware with this code. Is there a potential problem of different connects? (multi-process?)
+               context.dojoextComingFromOtherProxy = true;              
+           }
+       },
+
+       
+       _proxyConnectWidgetBase: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForConnectPlace) {
+           if(FBTrace.DBG_DOJO_DBG) {
+               FBTrace.sysout("DOJO creating _proxyConnectWidgetBase");
+           }
+
+           var self = this;
+           return function(ret, args) {
+               //args are: obj/*Object|null*/ , event/*string|function*/, method/*string|function*/
+               if(FBTrace.DBG_DOJO_DBG) {
+                   FBTrace.sysout("DOJO DEBUG executing _proxyConnectWidgetBase with this args and result: ", { 'args':args, 'ret':ret});
+               }
+               delete context.dojoextComingFromOtherProxy;
+
+
+              // FIXME[BugTicket#91]: Defensive code to avoid registering a connection made as part of a hack solution.
+              if (args[2] && args[2].internalClass == 'dojoext-added-code') {
+                   if(FBTrace.DBG_DOJO_DBG) {                        
+                       FBTrace.sysout("DOJO DEBUG: returning from wrapper created wth proxyConnect since given method was proxy as well", { 'args':args, 'ret':ret});
+                   }
+                  return ret; 
+              }
+       
+              var obj =  Wrapper.unwrapObject(args[0] || dojo.global);            
+              var event = Wrapper.unwrapObject(args[1]); // can be a function (dojo 1.7)
+              var handlerContext = this; //the widget instance
+              var method = Wrapper.unwrapObject(args[2]);
+              var dontFix = null;
+
+              stackDepthForConnectPlace = stackDepthForConnectPlace || 0;
+              var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutCaller(context, stackDepthForConnectPlace) : null;
+                      
+              // Verify if the connection should be filtered.
+              if (DojoPrefs._isDojoAnimationsFilterEnabled() && 
+                   self._filterConnection(obj, event, handlerContext, method, dojoAccess)) { 
+                  return ret; 
+              }
+              
+              dojoTracker.addConnection(obj, event, handlerContext, method, dontFix, ret, callerInfo);
+              return ret;
+           }
+       
+       },
+
+       _proxyDisconnectWidgetBase : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker) {
+           if(FBTrace.DBG_DOJO_DBG) {
+               FBTrace.sysout("DOJO creating _proxyDisconnectWidgetBase");
+           }
+
+           return function(handle) {
+               if(handle.dojoextComingFromUnsubscribe) {
+                   if(FBTrace.DBG_DOJO_DBG) {
+                       FBTrace.sysout("DOJO coming from _proxyUnsubscribeWidgetBase. Ignoring...");
+                   }
+                   return;
+               }
+               if(FBTrace.DBG_DOJO_DBG) {
+                   FBTrace.sysout("DOJO DEBUG executing _proxyDisconnectWidgetBase with arguments: ", arguments);
+               }
+
+               dojoTracker.removeConnection(Wrapper.unwrapObject(handle));
+           };
+       }
+       
+    });
     
     /***************************************************************************
      * ****************************************************************************
      * ****************************************************************************
      */    
-    
+    //connect/subscribe methods are defined in dojo/_base/connect and dijit/_WidgetBase
     DojoHooks.DojoProxiesInitializer17 = function() {
         if(FBTrace.DBG_DOJO) {
             FBTrace.sysout("DOJO DojoProxiesInitializer for dojo 1.7 created");
@@ -238,25 +453,25 @@ define([
     };
     DojoHooks.DojoProxiesInitializer17.prototype = Obj.extend(DojoHooks.DojoProxiesInitializer.prototype, {
 
-		onCompilationUnit: function (context, url, kind, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
-			if (!context.connectHooked && dojo && dojo.connect) {
+        onCompilationUnit: function (context, url, kind, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+            if (!context.connectHooked && dojo && dojo.connect) {
 
-				context.connectHooked = true;
-				
-				this.injectProxies(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
-			}			
+                context.connectHooked = true;
+                
+                this.injectProxies(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+            }           
 
-			//let's wrap _WidgetBase functions (connect, subscribe..) as well ..
-			this.injectProxiesWidgetBase(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
-		},
+            //let's wrap _WidgetBase functions (connect, subscribe..) as well ..
+            this.injectProxiesWidgetBase(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+        },
 
-		injectProxies: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+        injectProxies: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
 
             if(FBTrace.DBG_DOJO) {
                 FBTrace.sysout("injecting wrappers....");
             }
 
-			var require = Wrapper.unwrapObject(context.window).require;
+            var require = Wrapper.unwrapObject(context.window).require;
             var connectModule = require.modules['dojo/_base/connect'].result;
 
             // hook on connect AMD module's connect and others
@@ -275,10 +490,10 @@ define([
             // FIXME Replace this hack fix for a communication mechanism based on events.
             DojoProxies.protectProxy(context, /* "_connect" */"connect", 'disconnect', 'subscribe', 'unsubscribe');
 
-		},
-		
-		injectProxiesWidgetBase: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
-		    var require = Wrapper.unwrapObject(context.window).require;
+        },
+        
+        injectProxiesWidgetBase: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+            var require = Wrapper.unwrapObject(context.window).require;
             var widgetBaseModule = require.modules['dijit/_WidgetBase'];
             
             if(!context.widgetBaseModuleWrapped && widgetBaseModule && widgetBaseModule.executed == 'executed') {
@@ -305,58 +520,58 @@ define([
                 } catch(e) {
                     FBTrace.sysout("error while trying to inject wrappers to _WidgetBase.js: ", e);
                 }
-            }		    
-		},
-		
-	    /**
+            }           
+        },
+        
+        /**
          * extracted from connect.js (dojo 1.7.0b5)
          */
-	    /* array */_normalizeConnectArguments: function() {
-			// normalize arguments
-			var a=arguments, args=[], i=0;
-			// if a[0] is a String, obj was omitted
-			args.push(typeof a[0] == "string" ? null : a[i++], a[i++]);
-			// if the arg-after-next is a String or Function, context was NOT
+        /* array */_normalizeConnectArguments: function() {
+            // normalize arguments
+            var a=arguments, args=[], i=0;
+            // if a[0] is a String, obj was omitted
+            args.push(typeof a[0] == "string" ? null : a[i++], a[i++]);
+            // if the arg-after-next is a String or Function, context was NOT
             // omitted
-			var a1 = a[i+1];
-			args.push(typeof a1 == "string" || typeof a1 == "function" ? a[i++] : null, a[i++]);
-			// absorb any additional arguments
-			var l = null;
-			for(l = a.length; i<l; i++){	args.push(a[i]); }
-			return args;
-	    },
-	    
-	    _proxyConnect : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForConnectPlace){
+            var a1 = a[i+1];
+            args.push(typeof a1 == "string" || typeof a1 == "function" ? a[i++] : null, a[i++]);
+            // absorb any additional arguments
+            var l = null;
+            for(l = a.length; i<l; i++){    args.push(a[i]); }
+            return args;
+        },
+        
+        _proxyConnect : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForConnectPlace){
 
-	        if(FBTrace.DBG_DOJO_DBG) {
-	            FBTrace.sysout("DOJO creating _proxyConnect 17");
-	        }
-	        
-	        var self = this;	        
-	        return function(ret, args) {
-	            
-	            if(context.dojoextComingFromOtherProxy) {
-	                if(FBTrace.DBG_DOJO_DBG) {
-	                    FBTrace.sysout("DOJO coming from OtherProxy. Ignoring...");
-	                }
-	                return ret;
-	            }
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO creating _proxyConnect 17");
+            }
+            
+            var self = this;            
+            return function(ret, args) {
+                
+                if(context.dojoextComingFromOtherProxy) {
+                    if(FBTrace.DBG_DOJO_DBG) {
+                        FBTrace.sysout("DOJO coming from OtherProxy. Ignoring...");
+                    }
+                    return ret;
+                }
 
-	            if(FBTrace.DBG_DOJO_DBG) {                        
-	                FBTrace.sysout("DOJO DEBUG: connect 1.7 invoked with this args and result: ", { 'args':args, 'ret':ret});
-	            }
+                if(FBTrace.DBG_DOJO_DBG) {                        
+                    FBTrace.sysout("DOJO DEBUG: connect 1.7 invoked with this args and result: ", { 'args':args, 'ret':ret});
+                }
 
-	            // we need to normalize arguments (copied from dojo connect)
-	            args = self._normalizeConnectArguments.apply(this, args);
-	            if(FBTrace.DBG_DOJO_DBG) {
-	                FBTrace.sysout("DOJO DEBUG: normalized arguments: ", args);
-	            }
+                // we need to normalize arguments (copied from dojo connect)
+                args = self._normalizeConnectArguments.apply(this, args);
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO DEBUG: normalized arguments: ", args);
+                }
 
                // FIXME[BugTicket#91]: Defensive code to avoid registering a connection made as part of a hack solution.
                if (args[3] && args[3].internalClass == 'dojoext-added-code') {
-		            if(FBTrace.DBG_DOJO_DBG) {                        
-		                FBTrace.sysout("DOJO DEBUG: returning from wrapper created wth proxyConnect since given method was proxy as well", { 'args':args, 'ret':ret});
-		            }
+                    if(FBTrace.DBG_DOJO_DBG) {                        
+                        FBTrace.sysout("DOJO DEBUG: returning from wrapper created wth proxyConnect since given method was proxy as well", { 'args':args, 'ret':ret});
+                    }
 
                    return ret; 
                }
@@ -396,8 +611,8 @@ define([
                dojoTracker.addConnection(obj, event, handlerContext, method, dontFix, ret, callerInfo);
                return ret;
             };
-	   },
-	   
+       },
+       
        _proxySubscribeWidgetBase : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace) {
 
            if(FBTrace.DBG_DOJO_DBG) {
