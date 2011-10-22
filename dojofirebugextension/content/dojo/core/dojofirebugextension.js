@@ -32,7 +32,7 @@ define([
 // ****************************************************************
 // GLOBAL FUNCTIONS IN THIS NAMESPACE
 // ****************************************************************
-    
+
     
     var DojoExtension = {};
     
@@ -91,7 +91,11 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     },
         
     initialize: function() {
-        Firebug.ActivableModule.initialize.apply(this, arguments);        
+        Firebug.ActivableModule.initialize.apply(this, arguments);
+        
+        if(this.isExtensionEnabled()) {
+            this.enableExtension();  
+        }
     },
     
     shutdown: function() {
@@ -266,7 +270,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     onShowSubscriptionsButton: function(/*fbug context*/context) {
         this._getDojoPanel(context).showSubscriptions(context);
     },
-    
+
     //fbug 1.8 compatible
     /**
      * called on each dojo file loaded (actually for every file).
@@ -276,7 +280,6 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         var panelIsEnable = this.isExtensionEnabled();
         
         if (panelIsEnable) {
-              
            var href = url;
           
            if(FBTrace.DBG_DOJO_DBG) {

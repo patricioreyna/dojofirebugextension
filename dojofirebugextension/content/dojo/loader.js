@@ -44,7 +44,7 @@ checkFirebugRequireIsLoaded = function() {
     //Components.utils.reportError("DojoExtensionAsynchLoader - executing checkFirebugRequireIsLoaded . Times: " + waits);
     logMsg("executing checkFirebugRequireIsLoaded . Times: " + waits);
     waits += 1;
-    if (!Firebug.require) {
+    if (!Firebug.require || !Firebug.connection) {
         setTimeout(checkFirebugRequireIsLoaded, 10);
     } else {
         loadExtension();
