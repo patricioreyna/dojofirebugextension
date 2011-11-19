@@ -57,7 +57,7 @@
 		</copy>
 
 		<copy todir="${build.dir}">
-			<fileset dir="${basedir}" includes="content/**/*" excludes="content/**/Thumbs.db, content/fbtest/" />			
+			<fileset dir="${basedir}" includes="content/**/*" excludes="content/**/Thumbs.db, content/fbtest/, content/dojo/todo.txt" />			
 			<fileset dir="${basedir}" includes="defaults/**/*" excludes="default/**/Thumbs.db" />
 			<fileset dir="${basedir}" includes="locale/**/*" excludes="locale/**/Thumbs.db" />
 			<fileset dir="${basedir}" includes="skin/**/*" excludes="skin/**/Thumbs.db" />
