@@ -12,6 +12,7 @@
 // TODO: Replace with your <ext-id>
 var extensionName = "dojofirebugextension"; 
 
+var fbDojo_debugLogEnabled = false;
 var waits = 0;
 // ********************************************************************************************* //
 
@@ -34,28 +35,31 @@ config.onDebug = function() {
 }
 */
 
-logMsg = function(aMessage) {
+fbDojo_logMsg = function(aMessage) {
+    if(!fbDojo_debugLogEnabled) {
+        return;
+    }
     var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                    .getService(Components.interfaces.nsIConsoleService);
     consoleService.logStringMessage("DojoFirebugExtension AMD Loader - " + aMessage);
 };
 
-checkFirebugRequireIsLoaded = function() {
+fbDojo_checkFirebugRequireIsLoaded = function() {
     //Components.utils.reportError("DojoExtensionAsynchLoader - executing checkFirebugRequireIsLoaded . Times: " + waits);
-    logMsg("executing checkFirebugRequireIsLoaded . Times: " + waits);
+    fbDojo_logMsg("executing checkFirebugRequireIsLoaded . Times: " + waits);
     waits += 1;
     if (!Firebug.require || !Firebug.connection) {
-        setTimeout(checkFirebugRequireIsLoaded, 10);
+        setTimeout(fbDojo_checkFirebugRequireIsLoaded, 10);
     } else {
-        loadExtension();
+        fbDojo_loadExtension();
     }
 
 };
 
-loadExtension = function() {
+fbDojo_loadExtension = function() {
     
     //Components.utils.reportError("DojoExtensionAsynchLoader - executing loadExtension");
-    logMsg("executing loadExtension");
+    fbDojo_logMsg("executing loadExtension");
 
     // Load main.js module (the entry point of the extension) + a support for tracing.
     Firebug.require(config, [
@@ -83,7 +87,7 @@ loadExtension = function() {
 };
 
 
-checkFirebugRequireIsLoaded();
+fbDojo_checkFirebugRequireIsLoaded();
 return {};
 
 // ********************************************************************************************* //
