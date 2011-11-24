@@ -26,7 +26,8 @@ define([
         "dojo/lib/collections",
         "dojo/lib/utils",
         "dojo/ui/dojoreps"
-       ], function dojoModuleFactory(Firebug, Dom, Obj, FBTrace, Wrapper, DojoAccess, DojoDebug, DojoModel, DojoHooks, DojoPrefs, DojoProxies, Collections, DojoUtils, DojoReps)
+       ], function dojoModuleFactory(Firebug, Dom, Obj, FBTrace, Wrapper, DojoAccess, DojoDebug, DojoModel, 
+               DojoHooks, DojoPrefs, DojoProxies, Collections, DojoUtils, DojoReps)
 {
 
 // ****************************************************************
@@ -35,8 +36,6 @@ define([
 
     
     var DojoExtension = {};
-    
-    var VERSION = "1.1.2";
     
     /**
      * returns the DojoAccessor service.
@@ -293,7 +292,13 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
            
            if (dojo) {
                var startupHooks = DojoHooks.getImpl(context, dojo.version);
+               try {
                startupHooks.onCompilationUnit(context, url, kind, dojo, context.objectMethodProxier, dojoAccessor, dojoDebugger, context.connectionsAPI);
+               } catch (error) {
+                   if(FBTrace.DBG_DOJO) {
+                       FBTrace.sysout(error);
+                   }                   
+               }
            }
                                          
            //register a dojo.ready callback
