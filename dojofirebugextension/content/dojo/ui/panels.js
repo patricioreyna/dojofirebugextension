@@ -1357,10 +1357,12 @@ DojoPanels.DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
         Firebug.DOMPanel.DirTable.tag.append({object: dojoInfo.djConfig}, this.panelNode);
 
         //Module prefixes
-        var modLabel = Locale.$STR('dojo.modulesPrefixes.label', DOJO_BUNDLE);
-        var modPrefixes = {};
-        modPrefixes[modLabel] = dojoInfo.modulePrefixes;
-        Firebug.DOMPanel.DirTable.tag.append({object: modPrefixes}, this.panelNode);
+        if(dojoInfo.modulePrefixes) {
+            var modLabel = Locale.$STR('dojo.modulesPrefixes.label', DOJO_BUNDLE);
+            var modPrefixes = {};
+            modPrefixes[modLabel] = dojoInfo.modulePrefixes;
+            Firebug.DOMPanel.DirTable.tag.append({object: modPrefixes}, this.panelNode);
+        }
 
         //Global connections count
         var globalConnectionsCount = (context.connectionsAPI) ? context.connectionsAPI.getConnections().length : 0;

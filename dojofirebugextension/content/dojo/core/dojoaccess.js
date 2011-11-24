@@ -176,6 +176,7 @@ DojoAccess.DojoAccessor.prototype =
             if(!config) {
                 config = Wrapper.unwrapObject(context.window).djConfig;
             }
+            
             return config;
         },
         
@@ -624,6 +625,44 @@ DojoAccess.DojoAccessor17 = function() {
 };
 DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototype, {
     
+    /**
+     * returns DojoInfo object about the current loaded dojo.
+     * @return { 'version': dojo.version, 'djConfig': djConfig };
+     */
+    getDojoInfo: function(/*fbug context*/ context) {
+        var dojoInfo = DojoAccess.DojoAccessor.prototype.getDojoInfo.apply(this, arguments);
+        if(!dojoInfo) {
+            return;
+        }
+        
+        var dojo = _dojo(context);       
+        
+        var conf = this._getConfig(context, dojo);
+        dojoInfo.djConfig = {};
+        for(var p in conf) {
+            dojoInfo.djConfig[p] = conf[p];
+        }
+        if(!dojo._modulePrefixes) {
+            delete dojoInfo.modulePrefixes;
+        }
+        
+        dojoInfo.djConfig.scopeMap = dojo.scopeMap;
+        
+        
+        
+        dojoInfo.djConfig.isAsync = dojo.isAsync;
+        delete dojoInfo.djConfig.async;
+               
+        var require = Wrapper.unwrapObject(context.window).require;
+        dojoInfo.djConfig.baseUrl = require.baseUrl || dojo.config.baseUrl;
+        dojoInfo.djConfig.paths = require.paths;
+        dojoInfo.djConfig.modules = require.modules;
+        dojoInfo.djConfig.require = require;
+        
+        return dojoInfo;
+    },
+
+    
     _getConnectionsAndSubscriptions: function(widget, context, props, self) {       
         
         var tracker = context.connectionsAPI;
@@ -733,10 +772,16 @@ Version.prototype = {
             } else if(strict && this.patch != anotherVersion.patch) {
                 return this.patch - anotherVersion.patch;
             } else if(strict && this.flag != anotherVersion.flag) {
-                myFlag = this.flag.replace('alpha', 'a', "g");
-                myFlag = this.flag.replace('beta', 'b', "g");             
-                anotherFlag = anotherVersion.flag.replace('alpha', 'a', "g");
-                anotherFlag = anotherVersion.flag.replace('beta', 'b', "g");
+                if(!this.flag) {
+                    return 1;
+                } else if(!anotherVersion.flag) {
+                    return -1;
+                }
+                     
+                var myFlag = this.flag.replace('alpha', 'a', "g");
+                myFlag = myFlag.replace('beta', 'b', "g");   
+                var anotherFlag = anotherVersion.flag.replace('alpha', 'a', "g");
+                anotherFlag = anotherFlag.replace('beta', 'b', "g");
                 
                 return myFlag.localeCompare(anotherFlag);
             }
