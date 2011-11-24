@@ -265,9 +265,14 @@ DojoDebugger.prototype =
          * returns the debug information associated to the connect function caller frame.
          * @param context
          * @return DebugInfo, or null if we cannot find a calling stacktrace
+         * @DEPRECATED
          */
         /*DebugInfo*/getDebugInfoAboutConnectCaller: function(/*fbug context*/context) {
             //'connect place' -> dojo.connect impl -> (_connect wrapper from _Widget) -> our proxy -> dojo._connect impl
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DEPRECATED DOJO getDebugInfoAboutConnectCaller");
+            }
+
             return this.getDebugInfoAboutCaller(context, DojoAccess.getImpl(context).getStackTraceDepthForConnect(context));
         },
         
@@ -275,8 +280,13 @@ DojoDebugger.prototype =
          * returns the debug information associated to the subscribe function caller frame.
          * @param context
          * @return DebugInfo, or null if we cannot find a calling stacktrace
+         * @DEPRECATED
          */
         /*DebugInfo*/getDebugInfoAboutSubscribeCaller: function(/*fbug context*/context) {
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DEPRECATED DOJO getDebugInfoAboutSubscribeCaller");
+            }
+
             return this.getDebugInfoAboutCaller(context, DojoAccess.getImpl(context).getStackTraceDepthForSubscribe(context));
         },
         
@@ -293,7 +303,7 @@ DojoDebugger.prototype =
                 return null;
             }
 
-            if(FBTrace.DBG_DOJO) {
+            if(FBTrace.DBG_DOJO_DBG) {
                 FBTrace.sysout("DOJO getDebugInfoAboutCaller stackTrace: ", stackTrace);
             }
             
