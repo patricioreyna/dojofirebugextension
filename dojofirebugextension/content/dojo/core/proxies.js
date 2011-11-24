@@ -70,13 +70,11 @@ define([
          * the functions passed as parameter.
          * @param context
          * @param obj the object that own the method to be proxied
-         * @param objClientName full name in web page of obj
-         * @param expectedArgs number of expected args in web page. This is needed to generate web page script that can run in unprivileged context
          * @param functionToProxy the name of the method to be proxied
          * @param funcPreInvocation the Function obj to be called before the original method invocation
          * @param funcPostInvocation the Function obj to be called after the original method invocation
          */
-        proxyFunction : function(context, obj, objClientName, expectedArgs, functionToProxy, funcPreInvocation, funcPostInvocation){
+        proxyFunction : function(context, obj, functionToProxy, funcPreInvocation, funcPostInvocation){
             throw("proxyFunction is an abstract method in ObjectMethodProxier");
         }
     };
@@ -125,7 +123,7 @@ define([
         /**
          * @override
          */
-        proxyFunction : function(context, obj, objClientName, expectedArgs, functionToProxy, funcPreInvocation, funcPostInvocation){
+        proxyFunction : function(context, obj, functionToProxy, funcPreInvocation, funcPostInvocation){
                         
             
             if (!isDojoExtProxy(obj[functionToProxy]) && !obj[functionToProxy]._listeners) {
@@ -263,14 +261,14 @@ define([
        /**
         * @override
         */
-       proxyFunction : function(context, obj, objClientName, expectedArgs, functionToProxy, funcPreInvocation, funcPostInvocation){
+       proxyFunction : function(context, obj, functionToProxy, funcPreInvocation, funcPostInvocation){
             var eventKey = "DojoExtensionEventPre" + functionToProxy;
             var newFuncPreInvocation = (funcPreInvocation) ? this.eventFireFunctionWrapper(eventKey, funcPreInvocation) : null;
             
             eventKey = "DojoExtensionEventPos" + functionToProxy;
             var newFuncPostInvocation = (funcPostInvocation) ? this.eventFireFunctionWrapper(eventKey, funcPostInvocation) : null;
             
-            ObjectMethodProxierDirectAccessBased.prototype.proxyFunction.call(this, context, obj, objClientName, expectedArgs, functionToProxy, newFuncPreInvocation, newFuncPostInvocation);
+            ObjectMethodProxierDirectAccessBased.prototype.proxyFunction.call(this, context, obj, functionToProxy, newFuncPreInvocation, newFuncPostInvocation);
        },
         
         /**
