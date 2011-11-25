@@ -309,7 +309,7 @@ DojoDebugger.prototype =
             
             var callerFrame = this._findCallerFrame(stackTrace, context, stackDepth);
 
-            if(FBTrace.DBG_DOJO) {
+            if(FBTrace.DBG_DOJO_DBG) {
                 FBTrace.sysout("DOJO getDebugInfoAboutCaller found callerFrame with stackDepth = " + stackDepth + " is: ", callerFrame);
             }
             
