@@ -21,6 +21,10 @@ define([
     var DOJO_PREF_WIDGETS_TREE = "dojofirebugextension.displayWidgetsAsTree";
     var DOJO_ANIMATIONS_FILTER = "dojofirebugextension.dojoAnimationsFilter";
 
+    var documentation_REFERENCE_GUIDE_URL = "dojofirebugextension.documentation.REFERENCE_GUIDE_URL";
+    var documentation_API_DOC_URL_BASE = "dojofirebugextension.documentation.API_DOC_URL_BASE";
+    var documentation_DOC_SORTED_VERSIONS = "dojofirebugextension.documentation.DOC_SORTED_VERSIONS";
+
 
     var isExtensionEnabled = DojoPrefs.isExtensionEnabled = function() {
         return Firebug.Options.getPref("extensions.firebug.dojofirebugextension", "enableSites");
@@ -86,7 +90,20 @@ define([
     var getMaxSuggestedSubscriptions = DojoPrefs.getMaxSuggestedSubscriptions = function() {
         return Firebug.Options.getPref(Firebug.Options.getPrefDomain(), DOJO_PREF_MAX_SUGGESTED_SUBSCRIPTIONS);
     };  
-        
+
+    //DOJO DOCUMENTATION
+    
+    var getValidDocVersions = DojoPrefs.getValidDocVersions = function() {
+        return Firebug.Options.getPref(Firebug.Options.getPrefDomain(), documentation_DOC_SORTED_VERSIONS);
+    };
+
+    var getReferenceGuideURL = DojoPrefs.getReferenceGuideURL = function() {
+        return Firebug.Options.getPref(Firebug.Options.getPrefDomain(), documentation_REFERENCE_GUIDE_URL);
+    };
+   
+    var getApiDocURL = DojoPrefs.getApiDocURL = function() {
+        return Firebug.Options.getPref(Firebug.Options.getPrefDomain(), documentation_API_DOC_URL_BASE);
+    };
     
     // ***************************************************************
         

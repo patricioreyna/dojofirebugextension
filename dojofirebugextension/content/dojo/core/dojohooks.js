@@ -288,10 +288,12 @@ define([
                         //event is string
                         //$$HACK if using dojo 1.7's connect based on 'advices', then we disable Break on Event.
                         //FIXME or ..we could try finding the oroginal function in the advices chain
-                        if(!obj[event] || obj[event]['after']) {                          
-                            originalFunction = null;
+                        if(obj[event] && obj[event]['target']) {
+                            originalFunction = obj[event]['target'];
                         } else {
-                            originalFunction = obj[event]['target'];  
+                            //it's a wrapper and it doesn't provide access to orginal target
+                            originalFunction = null;
+                            //|| obj[event]['after']
                         }       
                     }
                     
@@ -747,12 +749,7 @@ define([
             }
             // hook on dojo's connect
             this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, dojo, "connect", "connectG", this.stackDepthForDojoValueHolder, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-            this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, dojo, "subscribe", "subsG", this.stackDepthForDojoValueHolder, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-            // FIXME Replace this hack fix for a communication mechanism based on events.
-            //DojoProxies.protectProxy(context, "connect", 'subscribe');
-            
-            //trace
-            this._fbTraceConnectionsNotTracked(context);
+            this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, dojo, "subscribe", "subsG", this.stackDepthForDojoValueHolder, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));            
         },
     
         injectProxiesConnectModule: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
@@ -768,12 +765,7 @@ define([
 
                 this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, connectModule, "connect", "connectM", this.stackDepthForDojoValueHolder, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
                 this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, connectModule, "subscribe", "subsM", this.stackDepthForDojoValueHolder, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));                
-                // FIXME Replace this hack fix for a communication mechanism based on events.
-                //DojoProxies.protectProxy(context, connectModule, "connect", 'subscribe');
                 
-                //trace
-                this._fbTraceConnectionsNotTracked(context);
-
             }
         },
 
@@ -797,10 +789,6 @@ define([
                 this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "before", "before", 2, this._proxyAspect("before", context, dojo, dojoAccess, dojoDebugger, dojoTracker));
                 this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "after", "after", 2, this._proxyAspect("after", context, dojo, dojoAccess, dojoDebugger, dojoTracker));
                 this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "around", "around", 2, this._proxyAspect("around", context, dojo, dojoAccess, dojoDebugger, dojoTracker));                
-                //DojoProxies.protectProxy(context, mod, 'after', 'before', 'around');
-                
-                //trace
-                this._fbTraceConnectionsNotTracked(context);
             }
 
             //on = function(target, type, listener, dontFix){...}
@@ -824,11 +812,7 @@ define([
                 }
 
                 //in this case we don't use _createProxy function because we need different parameters
-                proxyFactory.proxyFunction(context, mod, "parse", this._proxyPreExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker, 3, false, "on.parse"), this._postFunctionExecutor(context, dojoTracker, this._proxyOnParsePostExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this.EXECUTE.ALWAYS));
-                //DojoProxies.protectProxy(context, mod, 'parse');
-                
-                //trace
-                this._fbTraceConnectionsNotTracked(context);
+                proxyFactory.proxyFunction(context, mod, "parse", this._proxyPreExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker, 3, false, "on.parse"), this._postFunctionExecutor(context, dojoTracker, this._proxyOnParsePostExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this.EXECUTE.ALWAYS));                
             }
         },
         
@@ -843,10 +827,6 @@ define([
                 }
                 
                 this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "subscribe", "topic.sub", 2, this._proxySubscribeTopicModule(context, dojo, dojoAccess, dojoDebugger, dojoTracker));    
-                //DojoProxies.protectProxy(context, mod, 'subscribe');
-                
-                //trace
-                this._fbTraceConnectionsNotTracked(context);
             }
          
         },
@@ -866,7 +846,6 @@ define([
                     
                     this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "connect", "connectWB", 2, this._proxyConnectWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
                     this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "subscribe", "subsWB", 2, this._proxySubscribeWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker));                    
-                    //DojoProxies.protectProxy(context, mod, 'subscribe', 'connect');
 
                     if(FBTrace.DBG_DOJO) {
                         FBTrace.sysout("_WidgetBase wrapped successfully");

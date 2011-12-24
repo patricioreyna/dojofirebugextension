@@ -63,9 +63,13 @@ var getMethodLabel = DojoReps.getMethodLabel = function(method) {
 
     var label = '';
     if (typeof(method) == "string") {
-        label = method;
+        //it's an event string most likely. Return it directly , without adding the ending '()'
+        return method;
+        //label = method;
     } else if(method.displayName) {
         label = method.displayName;
+    } else if(method.__dojoExtDisplayNameCache) {
+        label = method.__dojoExtDisplayNameCache;
     } else {
         //xxxPERFORMANCE
         //TODO encapsulate in our debugger file
@@ -74,10 +78,14 @@ var getMethodLabel = DojoReps.getMethodLabel = function(method) {
             label = script ? StackFrame.getFunctionName(script, Firebug.currentContext) : method.name;
         } catch(exc) {
             //$$HACK
-            label = method.name; //TODO can we change by displayName in newer versions of Firebug?
+            label = method.name;
         }
+        if(label) {
+            label = label + ((label.indexOf(')') != -1) ? "" : "()");   
+        }
+        method.__dojoExtDisplayNameCache = label;
     }
-    return label + ((label.indexOf(')') != -1) ? "" : "()");
+    return label;
 };
     
 

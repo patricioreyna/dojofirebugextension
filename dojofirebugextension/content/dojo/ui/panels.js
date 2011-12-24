@@ -204,13 +204,21 @@ var DojoPanelMixin =  {
 
         //info about listener fn..
         var fnListener = conn.getListenerFunction();
-        var fnListenerLabel = (typeof(conn.method) == "string") ? conn.method : null;
+        //var fnListenerLabel = (typeof(conn.method) == "string") ? conn.method : null;
+        var fnListenerLabel = DojoReps.getMethodLabel(conn.method);
         var listener = dojoDebugger.getDebugInfoAboutFunction(context, fnListener, fnListenerLabel);
 
         //info about original fn..
         var fnModel = conn.getEventFunction();        
         var fnEventLabel = (typeof(conn.event) == "string") ? conn.event : null;
+        //var fnEventLabel = DojoReps.getMethodLabel(conn.event);
         var model = dojoDebugger.getDebugInfoAboutFunction(context, fnModel, fnEventLabel);
+        
+        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
+            FBTrace.sysout("event function: " , fnModel);
+            FBTrace.sysout("event label: " , fnEventLabel);
+            FBTrace.sysout("event model: " , model);
+        }        
         
         //info about place where the connection was made
         var caller = conn.callerInfo;
@@ -294,14 +302,21 @@ var DojoPanelMixin =  {
 
         //info about listener fn..
         var fnListener = observer.getListenerFunction();
-        var fnListenerLabel = null;
+        var fnListenerLabel = DojoReps.getMethodLabel(fnListener);
         var listener = dojoDebugger.getDebugInfoAboutFunction(context, fnListener, fnListenerLabel);
 
         //info about original fn..
-        var fnModel = observer.getEventFunction();        
-        var fnEventLabel = (typeof(observer.event) == "string") ? observer.event : null;
+        var fnModel = observer.getEventFunction();
+        var fnEventLabel = (typeof(observer.type) == "string") ? observer.type : null;
+        //var fnEventLabel = DojoReps.getMethodLabel(observer.type);        
         var model = dojoDebugger.getDebugInfoAboutFunction(context, fnModel, fnEventLabel);
         
+        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
+            FBTrace.sysout("event function: " , fnModel);
+            FBTrace.sysout("event label: " , fnEventLabel);
+            FBTrace.sysout("event model: " , model);
+        }        
+
         //info about place where the connection was made
         var caller = observer.callerInfo;
         
@@ -1870,6 +1885,10 @@ DojoPanels.DojoHTMLPanel.prototype = Obj.extend(Firebug.HTMLPanel.prototype,
     
 /***********************************************************************************************************************/
 
+// ***************************************************************
+// exported classes
+// ***************************************************************    
+
     Firebug.registerPanel(DojoPanels.dojofirebugextensionPanel);
     Firebug.registerPanel(DojoPanels.DojoInfoSidePanel);
     Firebug.registerPanel(DojoPanels.ConnectionsSidePanel);
@@ -1879,11 +1898,51 @@ DojoPanels.DojoHTMLPanel.prototype = Obj.extend(Firebug.HTMLPanel.prototype,
     Firebug.registerPanel(DojoPanels.DojoDOMSidePanel);
     Firebug.registerPanel(DojoPanels.DojoHTMLPanel);
     
-
     // ***************************************************************
-    // exported classes
+    // exported static methods
     // ***************************************************************    
 
+    var _getDojoPanel = function(context) {
+        return context.getPanel(DojoPanels.dojofirebugextensionPanel.prototype.name);
+    };
+
     
+    var exportedUIMethods = {};
+    
+    /**
+     * show the about message
+     */
+    exportedUIMethods.onAboutButton = function(/*fbug context*/context) {
+        _getDojoPanel(context).showAbout();
+    };
+
+    /**
+     * display all connections
+     */
+    exportedUIMethods.onShowConnectionsInTableButton = function(/*fbug context*/context) {
+        _getDojoPanel(context).showConnectionsInTable(context);
+    };
+
+    /**
+     * display all widgets from dijit registry
+     */
+    exportedUIMethods.onShowWidgetsButton = function(/*fbug context*/context) {
+        _getDojoPanel(context).showWidgets(context);
+    };
+    
+    /**
+     * display all subscriptions
+     */
+    exportedUIMethods.onShowSubscriptionsButton = function(/*fbug context*/context) {
+        _getDojoPanel(context).showSubscriptions(context);
+    };
+
+    exportedUIMethods.onShowOnAspectObserversButton = function(/*fbug context*/context) {
+        _getDojoPanel(context).showOnAspectObserversInTable(context);
+    };
+        
+    
+    //methods accessible from dojo.xul 
+    Firebug.DojoExtension.ui = exportedUIMethods;    
     return DojoPanels;
 });

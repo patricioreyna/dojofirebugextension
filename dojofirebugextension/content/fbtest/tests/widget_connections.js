@@ -34,11 +34,11 @@ function verifyWidgetConnections(testPageUrl, expectedIncomming, expectedOutgoin
 				var context = FW.Firebug.currentContext; //context!
 				
 				var api = context.connectionsAPI;
-				var conns = api.getConnections();
+				var conns = FBTest.DojoExtension.DojoModel.Connection.prototype.getGlobalConnections(api);
 				var dijit = win.dijit;
 				
 				var button = dijit.byId("button2");
-				var connsForButton = api.getConnection(button);
+				var connsForButton = api.getTrackingInfoFor(button, true);
 				
 				FBTest.ok((connsForButton != null) , "There are connections for button.");
 				
@@ -66,11 +66,11 @@ function verifyWidgetConnections(testPageUrl, expectedIncomming, expectedOutgoin
 };
 
 function testNumberOfIncommingConnection(expected, connectionInfo){
-	FBTest.compareHash(expected, connectionInfo.getIncommingConnectionsEvents().length, "Number of events with incoming connections: " + expected);
+	FBTest.compareHash(expected, FBTest.DojoExtension.DojoModel.Connection.prototype.getIncommingConnectionsEvents(connectionInfo).length, "Number of events with incoming connections: " + expected);
 }
 
 function testNumberOfOutgoingConnection(expected, connectionInfo){
-	FBTest.compareHash(expected, connectionInfo.getOutgoingConnectionsMethods().length, "Number of functions with outgoing connections: " + expected);
+	FBTest.compareHash(expected, FBTest.DojoExtension.DojoModel.Connection.prototype.getOutgoingConnectionsMethods(connectionInfo).length, "Number of functions with outgoing connections: " + expected);
 }
 
 function applyTests(context) {

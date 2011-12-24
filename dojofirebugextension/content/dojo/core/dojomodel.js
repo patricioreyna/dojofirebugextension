@@ -285,8 +285,9 @@ define([
              }
          },
 
-         //TODO move isEmpty method to trackingInfo class (if we create a class)
+         //TODO move isEmpty method to trackingInfo class (if we create a class)         
          _isEmpty: function(trackingInfo) {
+             //FIXME check if this logic is even working!
              return Object.keys(trackingInfo).length == 0;
          }
          
@@ -589,7 +590,10 @@ define([
          /*Array<Connection>*/ getGlobalConnections: function(tracker, /*Object?*/filterArgs, /*Object*/ formatters, /*Array<int>?*/ priorityCriteriaArray) {
              
              var f = filterArgs;
-             var theArray = tracker.sharedSpace._allConnectionsArray; 
+             var theArray = tracker.sharedSpace._allConnectionsArray;
+             if(!theArray) {
+                 return [];
+             }
                           
              if(f) {
                  //ok..user wants some filtering..

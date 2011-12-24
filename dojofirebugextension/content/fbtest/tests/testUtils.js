@@ -4,6 +4,7 @@
 //DEFAULT TIMEOUT FOR DOJO TESTS: 20 secs	
 window.FBTestTimeout = 20000;
 
+FBTest.DojoExtension = FBTest.FirebugWindow.Firebug.DojoExtension;
 
 
 

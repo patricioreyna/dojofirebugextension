@@ -4,6 +4,7 @@ function runTest() {
 	
 	setPreferences();
 	
+	
 	FBTest.sysout("widget-destroy-test START");
 	FBTest.openURL(basePath + "widget-destroy-test.html", function(win) {
 
@@ -27,9 +28,10 @@ function runTest() {
 				var context = FW.Firebug.currentContext; //context!
                 var dijit = win.dijit;
                 
-                var api = context.connectionsAPI;
-                var originalConnections = api.getConnections().length; //array
-                var originalSubscriptions = api.getSubscriptionsList().length; //array
+                var api = context.connectionsAPI;    
+                var DojoModel = FBTest.DojoExtension.DojoModel;
+                var originalConnections = DojoModel.Connection.prototype.getGlobalConnectionsCount(api);
+                var originalSubscriptions = DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(api);
                 var originalWidgets = panel.getWidgets(context).length;
                 
                 //check current number of connections and subscriptions
@@ -53,8 +55,8 @@ function runTest() {
                 
                 verifyEverythingWasCleanedUp(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions);
                 
-                FBTest.compare(api.getConnections().length, win.connCounter + (originalConnections - pageInitialNumberOfConnections), "Comparison between page connections and our number of connections");
-                FBTest.compare(api.getSubscriptionsList().length, win.subsCounter + (originalSubscriptions - pageInitialNumberOfSubscriptions), "Comparison between page subscriptions and our number of subscriptions");
+                FBTest.compare(DojoModel.Connection.prototype.getGlobalConnectionsCount(api), win.connCounter + (originalConnections - pageInitialNumberOfConnections), "Comparison between page connections and our number of connections");
+                FBTest.compare(DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(api), win.subsCounter + (originalSubscriptions - pageInitialNumberOfSubscriptions), "Comparison between page subscriptions and our number of subscriptions");
                 
                 FBTest.compare(pageInitialNumberOfConnections, win.connCounter, "Comparison between page actual connections and page initial number of connections");
                 FBTest.compare(pageInitialNumberOfSubscriptions, win.subsCounter, "Comparison between page actual subscriptions and page initial number of subscriptions");
@@ -82,7 +84,7 @@ function testButtonWidget(win, panel, api, context, dijit, originalWidgets, orig
     	win.createButton3();
     	var wid = dijit.byId("button3");
     	FBTest.ok(wid != null, "Button3 widget exists on registry");		    	
-    	var conns = api.getConnections().length;
+    	var conns = FBTest.DojoExtension.DojoModel.Connection.prototype.getGlobalConnections(api).length;
     	FBTest.ok(conns > originalConnections, "New number of connections is greater than at the beginning. New number: " +  conns + ". Original: " + originalConnections);    		    
     	FBTest.compare(originalWidgets + 1, panel.getWidgets(context).length, "There should be 1 more widget in the registry");
     	
@@ -110,8 +112,8 @@ function testWithTabContainerWidget(win, panel, api, context, dijit, originalWid
     	//create and destroy a tabContainer
     	FBTest.progress("creating TabContainer");
     	win.createTabContainer();
-    	var conns = api.getConnections().length;
-    	var subs = api.getSubscriptionsList().length;
+    	var conns = FBTest.DojoExtension.DojoModel.Connection.prototype.getGlobalConnectionsCount(api);
+    	var subs = FBTest.DojoExtension.DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(api);
     	FBTest.ok(conns > originalConnections, "New number of connections is greater than at the beginning. New number: " +  conns + ". Original: " + originalConnections);
     	FBTest.ok(subs > originalSubscriptions, "New number of subscriptions is greater than at the beginning. New number: " + subs + ". Original: " + originalSubscriptions);		    	
 
@@ -129,8 +131,8 @@ function testWithDialog(win, panel, api, context, dijit, originalWidgets, origin
     	//create and destroy a dialog
     	FBTest.progress("creating dialog");
     	win.createAndShowDialog();
-    	var conns = api.getConnections().length;
-    	var subs = api.getSubscriptionsList().length;			    	
+    	var conns = FBTest.DojoExtension.DojoModel.Connection.prototype.getGlobalConnectionsCount(api);
+    	var subs = FBTest.DojoExtension.DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(api);
     	FBTest.ok(conns > originalConnections, "New number of connections is greater than at the beginning. New number: " +  conns + ". Original: " + originalConnections);
     	FBTest.ok(subs > originalSubscriptions, "New number of subscriptions is greater than at the beginning. New number: " + subs + ". Original: " + originalSubscriptions);		    	
 
@@ -144,8 +146,8 @@ function testWithDialog(win, panel, api, context, dijit, originalWidgets, origin
 
 function verifyEverythingWasCleanedUp(win, panel, api, context, dijit, originalWidgets, originalConnections, originalSubscriptions) {
 	//connections and subscriptions should be the same as when we started
-	var conns = api.getConnections().length;
-	var subs = api.getSubscriptionsList().length;  	
+	var conns = FBTest.DojoExtension.DojoModel.Connection.prototype.getGlobalConnectionsCount(api);
+	var subs = FBTest.DojoExtension.DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(api);
 	FBTest.compare(originalConnections, conns, "Number of connections remained the same as the beginning. Actual number is: " + conns);
 	FBTest.compare(originalSubscriptions, subs, "Number of subscriptions remained the same as the beginning. Actual number is: " + subs);
 	FBTest.compare(originalWidgets, panel.getWidgets(context).length, "registry should contain same number of widgets as in the beginning");	

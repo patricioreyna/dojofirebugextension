@@ -17,12 +17,13 @@ function runTest()
 	    
 		FBTest.reload(function(win){
 			win = FBTest.FirebugWindow.FBL.unwrapObject(win);
+			var DojoModel = FBTest.DojoExtension.DojoModel;
 			var panel = FW.Firebug.chrome.selectPanel("dojofirebugextension"); //get our panel
 			var context = FW.Firebug.currentContext; //context!
 			
 			try {
 		    	var api = context.connectionsAPI;
-		    	var conns = api.getConnections();
+		    	var conns = DojoModel.Connection.prototype.getGlobalConnections(api);
 		    	
 		    	// compare number of registered connections
 		        FBTest.compare(18, conns.length, "number of connections made should be 18");

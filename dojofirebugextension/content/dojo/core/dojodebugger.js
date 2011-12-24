@@ -228,7 +228,11 @@ DojoDebugger.prototype =
                 return fnInfo;
             }
 
-            var script = Firebug.SourceFile.findScriptForFunctionInContext(context, fn);            
+            var script = Firebug.SourceFile.findScriptForFunctionInContext(context, fn);
+            if (!script) {
+                return fnInfo;
+              }
+              
             var fnName = label;
             if (!fnName) {
                 if (script) {
@@ -245,10 +249,6 @@ DojoDebugger.prototype =
             
             fnInfo.setFnName(fnName);
 
-            if (!script) {
-              return fnInfo;
-            }
-            
             var lineNo = null;
             var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, script);
             if (!sourceFile) {

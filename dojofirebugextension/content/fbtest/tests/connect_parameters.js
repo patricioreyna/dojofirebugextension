@@ -17,10 +17,12 @@ function runTest()
 			
 			try {
 		    	var api = context.connectionsAPI;
+		    	var DojoModel = FBTest.DojoExtension.DojoModel;
 		    	var d = win.dojo;
 		    	
 		    	//FIXME: I use the first obj in the list of objects with conns (that should be window), instead of use win
 		    	//because for an unknown reason the connections cannot be obtained using that reference.
+		    	FBTest.sysout("PATRICIO : ESTE PARECE QUE NO VA A FUNCAR");
 		    	var dojoGlobal = api.getObjectsWithConnections()[0];
 		    	var objConnHandlerTest = win.objConnHandlerTest;
 		    	var objConnTargetTest = win.objConnTargetTest;

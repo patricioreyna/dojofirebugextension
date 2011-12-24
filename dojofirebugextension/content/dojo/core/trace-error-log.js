@@ -34,9 +34,11 @@ define(["firebug/lib/trace"
         };
         
         //FBTrace options configuration
-        FBTrace.DBG_DOJO = true;
+        FBTrace.DBG_DOJO = false;
         FBTrace.DBG_DOJO_CONN_COUNTER = true;
         FBTrace.DBG_DOJO_DBG_HANDLES = false;
+        FBTrace.DBG_DOJO_DBG_DOC = false;
+        FBTrace.DBG_DOJO_CONTEXTMENU = false; 
     }
     //end HACK
 

@@ -138,6 +138,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
 
     /**
      * inspector related method
+     * FIXME should be moved to a UI related class
      */
     inspectFromContextMenu: function(elt) {
         var panel, inspectingPanelName;
@@ -242,38 +243,6 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         }
     },
 
-    /**
-     * show the about message
-     */
-    onAboutButton: function(/*fbug context*/context) {
-        this._getDojoPanel(context).showAbout();
-    },
-
-    /**
-     * display all connections
-     */
-    onShowConnectionsInTableButton: function(/*fbug context*/context) {
-        this._getDojoPanel(context).showConnectionsInTable(context);
-    },
-
-    /**
-     * display all widgets from dijit registry
-     */
-    onShowWidgetsButton: function(/*fbug context*/context) {
-        this._getDojoPanel(context).showWidgets(context);
-    },
-    
-    /**
-     * display all subscriptions
-     */
-    onShowSubscriptionsButton: function(/*fbug context*/context) {
-        this._getDojoPanel(context).showSubscriptions(context);
-    },
-
-    onShowOnAspectObserversButton: function(/*fbug context*/context) {
-        this._getDojoPanel(context).showOnAspectObserversInTable(context);
-    },
-    
     //fbug 1.8 compatible
     /**
      * called on each dojo file loaded (actually for every file).
@@ -423,6 +392,7 @@ Firebug.DojoExtension = DojoExtension;
 
 //$$HACK to make testUtils.js work
 DojoExtension.Collections = Collections;
+DojoExtension.DojoModel = DojoModel;
 
 return DojoExtension;
 

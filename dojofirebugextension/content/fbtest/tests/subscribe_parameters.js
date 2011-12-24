@@ -66,7 +66,7 @@ function verifyForDojoObj(api, topic, expectedMethod){
 }
 
 function getSubscrition(api, topic){
-	return api.subscriptionsForTopic(topic)[0];
+	return FBTest.DojoExtension.DojoModel.Subscription.prototype.getGlobalSubscriptionsForTopic(api, topic)[0];
 }
 
 function applyTests(context) {

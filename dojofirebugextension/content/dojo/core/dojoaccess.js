@@ -18,8 +18,9 @@ define([
         "firebug/lib/lib",
         "firebug/lib/object",
         "firebug/lib/trace",
-        "firebug/lib/wrapper"
-       ], function dojoAccessFactory(FBL, Obj, FBTrace, Wrapper)
+        "firebug/lib/wrapper",
+        "dojo/core/prefs"
+       ], function dojoAccessFactory(FBL, Obj, FBTrace, Wrapper, DojoPrefs)
 {
 
     var DojoAccess = {};
@@ -116,9 +117,6 @@ define([
  * ****************************************************************************
  * ****************************************************************************
  */    
-
-var API_DOC_URL_BASE = "http://dojotoolkit.org/api/";
-var REFERENCE_GUIDE_URL = "http://dojotoolkit.org/reference-guide/";
 
 DojoAccess.DojoAccessor = function() {
     if(FBTrace.DBG_DOJO) {
@@ -580,7 +578,8 @@ DojoAccess.DojoAccessor.prototype =
             var version = this.getDojoInfo(context).version;
             var docVersion = this._findClosestApiDocVersion(version);
                         
-            var docUrl = API_DOC_URL_BASE + docVersion.toString() + "/" + declaredClassName.replace('.', '/', "g");
+            //we get the preference value each time to allow users to change it dynamically            
+            var docUrl = DojoPrefs.getApiDocURL() + docVersion.toString() + "/" + declaredClassName.replace('.', '/', "g");
             
             return docUrl;
         },
@@ -589,16 +588,41 @@ DojoAccess.DojoAccessor.prototype =
             
             var given = Version.prototype.fromDojoVersion(version);
             
-            var current;
-            var i;
-            for ( i = 0; i < API_DOC_VERSIONS.length; i++) {                
-                var current = API_DOC_VERSIONS[i];
+            var docVersions = this._getApiDocVersionsArray();
+            var current, i;
+            for ( i = 0; i < docVersions.length; i++) {                
+                var current = docVersions[i];
                 if(given.compare(current) <= 0) {
                     break;
                 }
                 
             }
             return current;
+        },
+        
+        _getApiDocVersionsArray: function() {
+            if(!this.API_DOC_VERSIONS) {
+                this.API_DOC_VERSIONS = [];
+                var versionsString = DojoPrefs.getValidDocVersions();
+                if(FBTrace.DBG_DOJO_DBG_DOC) {
+                    FBTrace.sysout("DOJO DEBUG DOC: gotten versionsString: " + versionsString);
+                }                             
+
+                var versionNumbers = versionsString.split(',');
+                var i;
+                for ( i = 0; i < versionNumbers.length; i++) {
+                    if(FBTrace.DBG_DOJO_DBG_DOC) {
+                        FBTrace.sysout("DOJO DEBUG DOC: creating Doc version: " + versionNumbers[i]);
+                    }                             
+
+                    this.API_DOC_VERSIONS[i] = Version.prototype.fromVersionString(versionNumbers[i]);
+                }
+                this.API_DOC_VERSIONS[i] = new HeadVersion();
+                if(FBTrace.DBG_DOJO_DBG_DOC) {
+                    FBTrace.sysout("DOJO DEBUG DOC: all versions: ", this.API_DOC_VERSIONS);
+                }                                             
+            }
+            return this.API_DOC_VERSIONS;            
         },
         
         /**
@@ -613,7 +637,7 @@ DojoAccess.DojoAccessor.prototype =
                 return; //undefined
             }
             
-            return REFERENCE_GUIDE_URL + declaredClassName.replace('.', '/', "g") + ".html";
+            return DojoPrefs.getReferenceGuideURL() + declaredClassName.replace('.', '/', "g") + ".html";
         }
 
 };
@@ -658,6 +682,9 @@ DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototy
         dojoInfo.djConfig.paths = require.paths;
         dojoInfo.djConfig.modules = require.modules;
         dojoInfo.djConfig.require = require;
+        
+        //has
+        dojoInfo.djConfig['has.cache'] = require.has.cache;
         
         return dojoInfo;
     },
@@ -797,11 +824,19 @@ Version.prototype = {
                     FBTrace.sysout("DOJO this flag: " + this.flag + " . anotherVersion flag: " + anotherVersion.flag);
                 }
                 
+                //HACK for "dev" dojo versions (HEAD versions) . They should always win the comparison
+                if(this.flag == "dev") {
+                    return 1;                                   
+                } else if(anotherVersion.flag == "dev") {
+                    return -1;
+                }
+                
                 if(!this.flag) {
                     return 1;
                 } else if(!anotherVersion.flag) {
                     return -1;
                 }
+                
                      
                 var myFlag = this.flag.replace('alpha', 'a', "g");
                 myFlag = myFlag.replace('beta', 'b', "g");   
@@ -830,18 +865,6 @@ HeadVersion.prototype = Obj.extend(Version.prototype, {
             return (anotherVersion.isHead) ? 0 : 1;
         }
 });
-
-/*
- * FIXME this is a kind of hack! It's not good to have the available api doc versions hardcoded.
- * Find alternatives. For example:
- * - see if we can get available doc versions from the api site (for a given object).
- * - or, at least, move this hardcoded versions to a properties file...
- */
-var API_DOC_VERSIONS = [ Version.prototype.fromVersionString("1.3"), 
-                         Version.prototype.fromVersionString("1.4"), 
-                         Version.prototype.fromVersionString("1.5"), 
-                         Version.prototype.fromVersionString("1.6"),
-                         new HeadVersion() ]; 
 
 
 	DojoAccess.Version = Version;
