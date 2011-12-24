@@ -112,7 +112,8 @@ define([
                     if(FBTrace.DBG_DOJO) {
                         FBTrace.sysout("DOJO ERROR: An error at Dojo Firebug extension have occurred while executing _protectProxyFromExceptions. Exc: ", e);
                     }
-
+                    //retrow in client app!
+                    throw e; 
                 }
             };
             protectedFunction.internalClass = "dojoext-added-code";

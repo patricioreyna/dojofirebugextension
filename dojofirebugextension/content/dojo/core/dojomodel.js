@@ -190,214 +190,390 @@ define([
 
     /**
       * @class Connection API
+      * TODO should be renamed to Tracker
       */
      var ConnectionsAPI = DojoModel.ConnectionsAPI = function(/*boolean*/ useHashCodeBasedDictionary){
-         // Connections dictionary (keys will be "dojo connection's source objects").
-         this._connections = (useHashCodeBasedDictionary) ? new Collections.ComposedDictionary() : new Collections.Dictionary();
          
-         // Array of connections.
-         this._connectionsArray = [];
-         
-         // Disconnections dictionary. (keys will be "dojo handles")
-         this._disconnections = (useHashCodeBasedDictionary) ? new Collections.ComposedDictionary() : new Collections.Dictionary();
-         
-         // Subscriptions
-         this._subscriptions = new Collections.StringMap();         
+         //new impl
+         //a map holding Tracker Observers by handle . An Observer could be any of: Connection/Subscription/OnAspect/etc
+         this._handles = (useHashCodeBasedDictionary) ? new Collections.ComposedDictionary() : new Collections.Dictionary();
+         //a map holding TrackerInfo by sourceObject. Source object is a normal client app object , and trackingInfo contains the set of associated Observers
+         this._sourceObjects = (useHashCodeBasedDictionary) ? new Collections.ComposedDictionary() : new Collections.Dictionary();
+         //a shared space that can be used by specific impls to store values (for example, the array of all connection objects) (FIXME it's a hack)
+         this.sharedSpace = {};
      };
      
      ConnectionsAPI.prototype = Obj.extend(EventListenerSupport.prototype, {
 
-         /** Add a connection */
-         addConnection: function(
-                     /*Object|null*/ obj, 
-                    /*String|function*/ event, 
-                    /*Object|null*/ context, 
-                    /*String|Function*/ method,
-                    /*Boolean*/ dontFix,
-                    /*dojo disconnect Handle*/ handle,
-                    /*Object*/ callerInfo) {
+         destroy: function() {
+             //destroy remaining observers
+             var observers = this._handles.getValues();
+             for ( var i = 0; i < observers.length; i++) {
+                 observers[i].destroy();
+             }
+             observers = undefined;
+             this._handles.destroy();
+             delete this._handles;
+
+             //a map holding TrackerInfo by sourceObject. Source object is a normal client app object , and trackingInfo contains the set of associated Observers
+             this._sourceObjects.destroy();
+             delete this._sourceObjects;
              
-                 if(FBTrace.DBG_DOJO_DBG) {                        
-                	FBTrace.sysout("DOJO DEBUG: adding connection to event: " + event, [obj, event, context, method, dontFix, handle, callerInfo]);
-                 }
+             delete this.sharedSpace;
+             
+             this.removeAllListeners();
+         },
+         
+         trackObserver: function(handle, observer) {
 
-                 //FIXME ideally originalFunction should be an argument passed in by the corresponding proxy (based on dojo version)
-                 var originalFunction = null;
-                 try {
+             // Register the disconnect handle returned by dojo.connect.
+             this._handles.put(handle, observer);
 
-                     if(event.call) {
-                         //event is a function (dojo 1.7) 
-                         originalFunction = event;
-                     } else {                     
-                         //event is string
-                         //$$HACK if using dojo 1.7's connect based on 'advices', then we disable Break on Event.                     
-                         if(!obj[event] || obj[event]['after']) {                            
-                             originalFunction = null;
-                         } else {
-                             originalFunction = obj[event]['target'];  
-                         }       
-                     }
-                     
-                 } catch (exc) {
-                     //should not be here...
-                     if(FBTrace.DBG_DOJO_DBG) {
-                         FBTrace.sysout("DOJO DEBUG: error bypassed while adding connection", exc);
-                     }
+             //delegate registration to observer
+             observer.register(this, handle);             
+         },
+
+         untrackObserver: function(handle) {
+             var observer = this._handles.get(handle);
+
+             if(FBTrace.DBG_DOJO_DBG_HANDLES) {
+                 FBTrace.sysout("untrack handle called", [handle, observer]);
+             }
+
+             
+             if(!observer) {
+                 return;
+             }
+             // Remove from registered handles
+             this._handles.remove(handle);
+                        
+             observer.unregister(this, handle);
+         },
+         
+         /**
+          * return an observer . An Observer could be any of: Connection/Subscription/OnAspect/etc
+          */         
+         /*Object*/getObserver: function(handle) {
+             return this._handles.get(handle);
+         },
+         
+         /**
+          * return the trackingInfo related to the given source object.
+          * Source object is a normal client app object , and TrackingInfo is an object containing the set of associated Observers
+          */
+         /*TrackingInfo*/getTrackingInfoFor: function(/*Object*/object, /*boolean(optional)*/doNotCreate) {
+             var trackingInfo = this._sourceObjects.get(object);
+             if (!trackingInfo && !doNotCreate){
+                 trackingInfo = {};
+                 //TODO stamp the source objects with a number or timestamp , to be able to compare them !
+                 this._sourceObjects.put(object, trackingInfo);
+             }
+             return trackingInfo;
+         },
+         
+         /**
+          * used by impls to force a check of trackingInfo emptiness status (and thus removal from the global collection)
+          */
+         trackingInfoDeleted: function(/*Object*/sourceObj) {
+             var trackingInfo = this._sourceObjects.get(sourceObj);
+             
+             if(FBTrace.DBG_DOJO) {                        
+                 FBTrace.sysout("DOJO DEBUG: isEmpty trackingObject: ", [Object.keys(trackingInfo).length == 0, trackingInfo]);
+             }
+             if(this._isEmpty(trackingInfo)) {
+                 this._sourceObjects.remove(sourceObj);
+             }
+         },
+
+         //TODO move isEmpty method to trackingInfo class (if we create a class)
+         _isEmpty: function(trackingInfo) {
+             return Object.keys(trackingInfo).length == 0;
+         }
+         
+         
+     }); //end of ConnectionsAPI
+     
+     
+     // Public Events supported by ConnectionsAPI.
+     ConnectionsAPI.ON_CONNECTION_ADDED = 'connection_added';
+     ConnectionsAPI.ON_CONNECTION_REMOVED = 'connection_removed';
+     ConnectionsAPI.ON_SUBSCRIPTION_ADDED = 'subscription_added';
+     ConnectionsAPI.ON_SUBSCRIPTION_REMOVED = 'subscription_removed';
+     ConnectionsAPI.ON_ONASPECTOBSERVER_ADDED = 'OnAspectObserver_added';
+     ConnectionsAPI.ON_ONASPECTOBSERVER_REMOVED = 'OnAspectObserver_removed';
+     
+     
+     // ***************************************************************
+     
+     
+     /**
+      * @class FunctionLinkResolver
+      */
+     var FunctionLinkResolver = DojoModel.FunctionLinkResolver = function(){};
+     FunctionLinkResolver.prototype = 
+     {
+             /**
+              * returns the listener fn object.
+              */
+             getListenerFunction : function() {
+                 var fn = null;
+                 if(this.listener && typeof(this.listener) == "function") {
+                     fn = this.listener;
+                 } else if(this.method && typeof(this.method) == "function") {
+                     fn = this.method;
+                 } else if (this.context) {
+                     fn = this.context[this.method];
                  }
                  
-               // Create the connection.
-               var con = new Connection(obj, event, context, method, originalFunction, dontFix, handle[3], callerInfo);
-               
-               // Add connection to list.
-               this._connectionsArray.push(con);
-               
-               // Register incoming connection
-               this._getAndCreateIfRequiredObjectInfo(con.obj).addIncomingConnection(con);
-               
-               // Register outgoing connection
-               this._getAndCreateIfRequiredObjectInfo(con.context).addOutgoingConnection(con);
-               
-               // Register the disconnect handle returned by dojo.connect.
-               this._disconnections.put(handle, con);
-               
-               // Raised the onConnectionAdded event if there is registered handler.
-               this.fireEvent(ConnectionsAPI.ON_CONNECTION_ADDED);
-               
-               return con;
-         },
-         
-         /**
-          * This function return (and create if it does not exist for the key) the objectInfo
-          * for the object passed as parameter.          
-          */ 
-         /*ObjectInfo*/_getAndCreateIfRequiredObjectInfo: function(obj) {
-                var objectInfo = this._connections.get(obj);
-                if (!objectInfo){
-                    objectInfo = new ObjectInfo(obj);
-                    this._connections.put(obj, objectInfo);
-                }
-                return objectInfo;
-         },
-         
-         /**
-          * Remove a connection, given a dojo handle
-          */
-         removeConnection: function(/*Handle*/ handle) {
-                var con = this._disconnections.get(handle);
-                
-                if(con) {
+                 return this._getOriginalFunctionIfNeeded(fn);
+             },
 
-                    if(FBTrace.DBG_DOJO_DBG) {                        
-                        FBTrace.sysout("DOJO DEBUG: removing connection", [handle, con]);
-                    }
-
-                    
-                    // Remove connection from list.
-                   this._connectionsArray.splice(this._connectionsArray.indexOf(con), 1);
-                    
-                    // Remove incoming connection
-                    var conObjInfo = this._connections.get(con.obj);
-                    conObjInfo.removeIncomingConnection(con);
-                    if (conObjInfo.isEmpty()) {
-                        this._connections.remove(con.obj);
-                    }
-                    
-                    // Remove outgoing connection
-                    var conContextInfo = this._connections.get(con.context);
-                    conContextInfo.removeOutgoingConnection(con);
-                    if (conContextInfo.isEmpty()) {
-                        this._connections.remove(con.context);
-                    }
-                    
-                    // Remove from disconnections
-                    this._disconnections.remove(handle);
-                   
-                    // Raised the onConnectionRemoved event if there is registered handler.
-                   this.fireEvent(ConnectionsAPI.ON_CONNECTION_REMOVED);
-                }
-         },
+             _getOriginalFunctionIfNeeded : function(fn) {
+                 return DojoProxies.getDojoProxiedFunctionIfNeeded(fn); 
+             }    
+     };
+     
+     // ***************************************************************
+     
+     /**
+      * @class Connection
+      */
+     var Connection = DojoModel.Connection = function(obj, /*string|function*/event, context, method, originalFunction, dontFix, callerInfo) {
+         this.clazz = "Connection";
+         this.obj = obj;
+         this.event = event;
+         this.context = context;
+         this.method = method;
+         this.originalFunction = originalFunction;
+         this.dontFix = dontFix;
+         this.callerInfo = callerInfo;                
+     };
+     Connection.prototype = Obj.extend(FunctionLinkResolver.prototype, {
          
          /**
-          * Add a subscription
+          * Destructor
           */
-         addSubscription: function(/*String*/ topic, /*Object|null*/ context, /*String|Function*/ method,
-                    /*unsubscribe Handle*/ handle, callerInfo) {
-             var subs = new Subscription(topic, context, method, callerInfo);
-             var subsForTopic = this._subscriptions.get(topic);
-             if (!subsForTopic) {
-                 subsForTopic = [];
-                 this._subscriptions.put(topic, subsForTopic);
+         destroy: function() {
+             delete this.clazz;
+             delete this.obj;
+             delete this.event;
+             delete this.context;
+             delete this.method;
+             delete this.originalFunction;
+             delete this.dontFix;
+             delete this.callerInfo;            
+         },
+               
+         getEventFunction: function() {
+            return DojoProxies.getDojoProxiedFunctionIfNeeded(this.originalFunction);
+         },
+
+         register: function(tracker, handle) {             
+             if(FBTrace.DBG_DOJO_DBG) {                        
+                 FBTrace.sysout("DOJO DEBUG: adding connection", [handle, this]);
+             }             
+
+             // Add connection to global list.
+             if(!tracker.sharedSpace._allConnectionsArray) {
+                 tracker.sharedSpace._allConnectionsArray = [];
              }
-             subsForTopic.push(subs);
-            
-             if(FBTrace.DBG_DOJO_DBG) {
-                 FBTrace.sysout("new created Subs: ", subs);
-                 FBTrace.sysout("subsForTopic value: ", subsForTopic);                 
-             }
+             tracker.sharedSpace._allConnectionsArray.push(this);
+             
+             // Register incoming connection
+             this._registerIncomingConnection(tracker.getTrackingInfoFor(this.obj));
+             
+             // Register outgoing connection
+             this._registerOutgoingConnection(tracker.getTrackingInfoFor(this.context));
+             
+             // Raise the onConnectionAdded event if there is registered handler.
+             tracker.fireEvent(ConnectionsAPI.ON_CONNECTION_ADDED);
+         },
 
+         unregister: function(/*ConnectionsAPI*/tracker, handle) {
              
-            // Register subscription
-            this._getAndCreateIfRequiredObjectInfo(context).addSubscription(subs);
+             if(FBTrace.DBG_DOJO_DBG) {                        
+                 FBTrace.sysout("DOJO DEBUG: removing connection", [handle, this]);
+             }             
              
-            // Register the disconnect handle returned by dojo.connect.
-            this._disconnections.put(handle, subs);
-            
-            // Raised the onSubscriptionAdded event if there is registered handler.
-            this.fireEvent(ConnectionsAPI.ON_SUBSCRIPTION_ADDED);
+             //Remove connection from global list.
+             //FIXME performance
+             tracker.sharedSpace._allConnectionsArray.splice(tracker.sharedSpace._allConnectionsArray.indexOf(this), 1);
+             
+             // Remove incoming connection
+             this._unregisterIncomingConnection(tracker.getTrackingInfoFor(this.obj));
+             tracker.trackingInfoDeleted(this.obj);
+             
+             // Remove outgoing connection
+             this._unregisterOutgoingConnection(tracker.getTrackingInfoFor(this.context));
+             tracker.trackingInfoDeleted(this.context);
+             
+             // Raised the onConnectionRemoved event if there is registered handler.
+             tracker.fireEvent(ConnectionsAPI.ON_CONNECTION_REMOVED);
          },
-         
-         /**
-          * Remove a Subscription, given a dojo handle
-          */
-         removeSubscription: function(/*Handle*/ handle) {
-             if(!handle) {
-                 return;
-             }
-             var subs = this._disconnections.get(handle);
-             
-             if(!subs) {
-                 return;
-             }               
-             
-             // Remove subscription
-             var topic = subs.topic;
-             var subsForTopic = this._subscriptions.get(topic);
-             subsForTopic.splice(subsForTopic.indexOf(subs),1);
-             
-             // Remove subscription from ObjectInfo
-              var objContextInfo = this._connections.get(subs.context);
-              objContextInfo.removeSubscription(subs);
-              if (objContextInfo.isEmpty()) {
-                  this._connections.remove(subs.context);
-              }
-             
-             // Remove from disconnections
-              this._disconnections.remove(handle);
-              
-              // Raised the onSubscriptionRemoved event if there is registered handler.
-             this.fireEvent(ConnectionsAPI.ON_SUBSCRIPTION_REMOVED);
 
+         _initializeTrackingInfo: function(trackingInfo) {
+             if(!trackingInfo._incomingConnections) {
+                 //Incoming connections (Dictionary<String|Function, [Connection]>)
+                 trackingInfo._incomingConnections = new Collections.ComposedDictionary();
+                 trackingInfo._incomingConnectionsCount = 0;                 
+             }
+             
+             if(!trackingInfo._outgoingConnections) {
+                 //Outgoing connections (Dictionary<(String|Function), [Connection]>).
+                 trackingInfo._outgoingConnections = new Collections.ComposedDictionary();
+                 trackingInfo._outgoingConnectionsCount = 0;
+             }
+         },
+
+         // Add new incoming connection.
+         _registerIncomingConnection: function(trackingInfo) {
+             this._initializeTrackingInfo(trackingInfo);
+             
+             var incConnections = trackingInfo._incomingConnections.get(this.event);
+             if (!incConnections){
+                 incConnections = [];
+                 trackingInfo._incomingConnections.put(this.event, incConnections);
+             }
+             incConnections.push(this);
+             trackingInfo._incomingConnectionsCount++;
+         },
+         
+         // Add new outgoing connection.
+         _registerOutgoingConnection: function(trackingInfo) {
+             this._initializeTrackingInfo(trackingInfo);
+             
+             var outConnections = trackingInfo._outgoingConnections.get(this.method);
+             if (!outConnections){
+                 outConnections = [];
+                 trackingInfo._outgoingConnections.put(this.method, outConnections);
+             }
+             outConnections.push(this);
+             trackingInfo._outgoingConnectionsCount++;
+         },
+         
+         // Remove incoming connection.
+         _unregisterIncomingConnection: function(trackingInfo) {
+             var arr = trackingInfo._incomingConnections.get(this.event);
+             arr.splice(arr.indexOf(this),1); //FIXME PERFORMANCE
+             // Remove event if it has no associated connections.
+             if (arr.length == 0) {
+                 trackingInfo._incomingConnections.remove(this.event);
+             }            
+             trackingInfo._incomingConnectionsCount--;
+             
+             if(trackingInfo._incomingConnectionsCount == 0) {
+                 if(trackingInfo._incomingConnections) {
+                     trackingInfo._incomingConnections.destroy();
+                 }
+                 delete trackingInfo._incomingConnections;
+                 delete trackingInfo._incomingConnectionsCount;
+             }
+         },
+         
+         // Remove outgoing connection.
+         _unregisterOutgoingConnection: function(trackingInfo){
+             var arr = trackingInfo._outgoingConnections.get(this.method);
+             arr.splice(arr.indexOf(this),1); //FIXME PERFORMANCE
+             // Remove method if it has no associated connections.
+             if (arr.length == 0) {
+                 trackingInfo._outgoingConnections.remove(this.method);
+             }             
+             trackingInfo._outgoingConnectionsCount--;
+             
+             if(trackingInfo._outgoingConnectionsCount == 0) {
+                 if(trackingInfo._outgoingConnections) {
+                     trackingInfo._outgoingConnections.destroy();
+                 }
+                 delete trackingInfo._outgoingConnections;
+                 delete trackingInfo._outgoingConnectionsCount;
+             }
+         },          
+         
+         /* 
+          * ************************************************
+          * ************************************************
+          * CONNECTION STATIC METHODS
+          * ************************************************
+          * ************************************************
+          */
+         
+         /**
+          * Return the events with connections associated.
+          * @return an array with the events with connections associated.
+          */
+         /*array*/getIncommingConnectionsEvents: function(trackingInfo) {
+             if(!trackingInfo._incomingConnections) {
+                 return [];
+             }
+             return trackingInfo._incomingConnections.getKeys();
+         },
+
+         /**
+          * @param event the event
+          * @return an array with the connections associated to the event passed as parameter.
+          */
+         /*array*/getIncommingConnectionsForEvent: function(trackingInfo, event) {
+             if(!trackingInfo._incomingConnections) {
+                 return [];
+             }             
+             var cons = trackingInfo._incomingConnections.get(event);
+             return cons || [];
          },
          
          /**
-          * Return an object that contain the connections for the parameter object.
+          * Return the methods with connections associated.
+          * @return an array with the methods with connections associated.
           */
-         /*ObjectInfo*/getConnection: function(/*Object: conn's source or context object*/obj) {
-             return this._connections.get(obj);
+         /*array*/getOutgoingConnectionsMethods: function(trackingInfo) {
+             if(!trackingInfo._outgoingConnections) {
+                 return [];
+             }             
+             return trackingInfo._outgoingConnections.getKeys();
          },
          
          /**
-          * Return an object that contain the connections for the parameter object.
+          * Return the connections associated to the method passed as parameter.
+          * @param method the method
+          * @return an array with the connections associated to the method passed as parameter.
           */
-         /*Connection*/getConnectionByHandle: function(/*dojo handle*/handle) {
-             return this._disconnections.get(handle);
+         /*array*/getOutgoingConnectionsForMethod: function(trackingInfo, method) {
+             if(!trackingInfo._outgoingConnections) {
+                 return [];
+             }             
+             var cons = trackingInfo._outgoingConnections.get(method);
+             return cons || [];
          },
          
          /**
-          * Return an array with the objects with connections.
+          * Return true if there are no registered connections.
           */
-         /*array<Object>*/getObjectsWithConnections: function() {
-             return this._connections.getKeys();
+         /*boolean*/ isEmpty: function(trackingInfo) {
+          return (!trackingInfo._incomingConnectionsCount || trackingInfo._incomingConnectionsCount == 0) && 
+              (!trackingInfo._outgoingConnectionsCount || trackingInfo._outgoingConnectionsCount == 0);
+         },
+         
+         /*int*/getIncommingConnectionsCount: function(trackingInfo) {
+             return trackingInfo._incomingConnectionsCount;
+         },
+
+         /*int*/getOutgoingConnectionsCount: function(trackingInfo) {
+             return trackingInfo._outgoingConnectionsCount;
+         },
+         
+         /**
+          * Return true if there are any connection info registered for the object passed as parameter.
+          * @param tracker
+          * @param object The object.
+          */
+         /*boolean*/ areThereAnyConnectionsFor: function(tracker, /*object*/object) {
+             var trackingInfo = tracker.getTrackingInfoFor(object, true);
+             return trackingInfo && !this.isEmpty(trackingInfo);
+         },
+         
+         
+         getGlobalConnectionsCount: function(tracker) {
+             var arr = tracker.sharedSpace._allConnectionsArray;
+             return arr ? arr.length : 0;
          },
          
          /**
@@ -410,10 +586,10 @@ define([
           * this.ConnectionArraySorter.CONTEXT = 2;
           * this.ConnectionArraySorter.METHOD = 3;
           */
-         /*Array<Connection>*/ getConnections: function(/*Object?*/filterArgs, /*Object*/ formatters, /*Array<int>?*/ priorityCriteriaArray) {
+         /*Array<Connection>*/ getGlobalConnections: function(tracker, /*Object?*/filterArgs, /*Object*/ formatters, /*Array<int>?*/ priorityCriteriaArray) {
              
              var f = filterArgs;
-             var theArray = this._connectionsArray; 
+             var theArray = tracker.sharedSpace._allConnectionsArray; 
                           
              if(f) {
                  //ok..user wants some filtering..
@@ -445,11 +621,10 @@ define([
                      //var end = (count + from <= theArray.length) ? count + from : theArray.length;
                      theArray = theArray.slice(from, end); 
                  }
-             }
-            
+             }         
     
             if (priorityCriteriaArray) {
-                //FIXME change this by a timestmp!
+                //FIXME change this by a timestmp or number "stamped" to the con.target and con.obj
                 var sorter = new ConnectionArraySorter(this.getObjectsWithConnections(), priorityCriteriaArray);
                  var cons = sorter.sortConnectionArray(theArray);
                  return cons;
@@ -457,436 +632,8 @@ define([
              } else {
                  return theArray;
              }
-         },
-         
-         /**
-          * Return the subscriptions map.
-          */
-         /*StringMap*/ getSubscriptions: function() {
-             return this._subscriptions;
-         },
-         
-         /**
-          * Return an array with all the registered subscriptions.
-          * @return the list of existent subscriptions.
-          */
-         /*Array<Subscriptions>*/ getSubscriptionsList: function() {
-             
-             //xxxPERFORMANCE
-             
-             var subs = [];
-             var subKeys = this.getSubscriptions().getKeys();
-             var i;
-             for (i = 0; i < subKeys.length; i++) {
-                 subs = subs.concat(this.getSubscriptions().get(subKeys[i]));
-             }
-             return subs;
-         },
-         
-         /**
-          * Returns is a disconnect handle is still being tracked 
-          * @param handle The dojo disconnect handle returned by dojo.connect
-          */
-         /*Boolean*/ isHandleBeingTracked: function(/*DojoDisconnectHandler*/handle) {
-             //FIXME this method is only used from tests? is it needed at all ?
-             return (this._disconnections.get(handle) == null);
-         },
-         
-         /**
-          * Return the topics list.
-          */
-         /*Array<String>*/ getTopics: function() {
-             return this.getSubscriptions().getKeys();
-         },
-         
-         /**
-          * Return the subscriptions list for the topic passed as parameter.
-          * @param topic The topic.
-          */
-         /*Array<Subscription>*/ subscriptionsForTopic: function(/*String*/topic) {
-             return this.getSubscriptions().get(topic);
-         },
-         
-         /*Subscription*/getSubscriptionByHandle: function(/*dojo handle*/ handle) {
-             return this._disconnections.get(handle);
-         },
-         
-         /**
-          * Return true if there are any connection info registered for the object passed as parameter.
-          * @param object The object.
-          */
-         /*boolean*/ areThereAnyConnectionsFor: function(/*object*/object) {
-             var objInfo = this.getConnection(object);
-             return objInfo &&
-                     !objInfo.getConnectionsTracker().isEmpty();
-         },
-         
-         /**
-          * Return true if there are any subscription info registered for the object passed as parameter.
-          * @param object The object.
-          */
-         /*boolean*/ areThereAnySubscriptionFor: function(/*object*/object) {
-             var objInfo = this.getConnection(object);
-             return objInfo &&
-                     !objInfo.getSubscriptionsTracker().isEmpty();
-         },
-         
-         /**
-          * Destructor
-          */
-         destroy: function() {
-             this._connections.destroy();
-             delete this._connections;
-             var i;
-             for(i=0; i<this._connectionsArray.length ;i++){
-                 this._connectionsArray[i].destroy();
-             }
-             this._connectionsArray.splice(0, this._connectionsArray.length);
-             delete this._connectionsArray;
-             
-             this._disconnections.destroy();
-             delete this._disconnections;
-             
-             this.removeAllListeners();
-             
-             delete this._subscriptions;
          }         
-     }); //end of ConnectionsAPI
-     
-     
-     // Public Events supported by ConnectionsAPI.
-     ConnectionsAPI.ON_CONNECTION_ADDED = 'connection_added';
-     ConnectionsAPI.ON_CONNECTION_REMOVED = 'connection_removed';
-     ConnectionsAPI.ON_SUBSCRIPTION_ADDED = 'subscription_added';
-     ConnectionsAPI.ON_SUBSCRIPTION_REMOVED = 'subscription_removed';
-     
-     
-     // ***************************************************************     
-     
-     /**
-      * @class Object Info
-      */
-     var ObjectInfo = function(object){
-        // ConnectionsTracker 
-        this._connectionsTracker = new ConnectionsTracker(object);
-        
-        // SubscriptionsTracker
-        this._subscriptionsTracker = new SubscriptionsTracker(object);        
-     };
-     ObjectInfo.prototype = {
-
-             // ***** Connection methods ******//
-        
-        /**
-         * ConnectionsTracker getter
-         */
-        getConnectionsTracker: function(){
-            return this._connectionsTracker;
-        },
-    
-        /**
-         * SubscriptionsTracker getter
-         */
-        getSubscriptionsTracker: function(){
-            return this._subscriptionsTracker;
-        },
-        
-        // Add new incoming connection.
-        addIncomingConnection: function(con){
-            this.getConnectionsTracker().addIncomingConnection(con);
-        },
-        
-        // Add new outgoing connection.
-        addOutgoingConnection:  function(con){
-            this.getConnectionsTracker().addOutgoingConnection(con);
-        },
-        
-        // Remove incoming connection.
-        removeIncomingConnection: function(con){
-            this.getConnectionsTracker().removeIncomingConnection(con);
-        },
-        
-        // Remove outgoing connection.
-        removeOutgoingConnection: function(con){
-            this.getConnectionsTracker().removeOutgoingConnection(con);
-        },
-        
-        // Return the events with connections associated.
-        getIncommingConnectionsEvents: function(){
-            return this.getConnectionsTracker().getIncommingConnectionsEvents();
-        },
-        
-        // Return the connections associated to the event passed as parameter.
-        /*array*/getIncommingConnectionsForEvent: function(event){
-            return this.getConnectionsTracker().getIncommingConnectionsForEvent(event);
-        },
-        
-        // Return the methods with connections associated.
-        /*array*/getOutgoingConnectionsMethods: function(){
-            return this.getConnectionsTracker().getOutgoingConnectionsMethods();
-        },
-        
-        // Return the connections associated to the method passed as parameter.
-        /*array*/getOutgoingConnectionsForMethod: function(method){
-            return this.getConnectionsTracker().getOutgoingConnectionsForMethod(method);
-        },
-        
-        
-        // ***** Subscription methods ******//
-        
-        // Add new subscription.
-        addSubscription: function(sub){
-            this.getSubscriptionsTracker().addSubscription(sub);
-        },
-        
-        // Remove subscription.
-        removeSubscription: function(sub){
-            this.getSubscriptionsTracker().removeSubscription(sub);
-        },
-        
-        // Return the subscriptions for the object associated with this.object.
-        getSubscriptions: function(){
-            return this.getSubscriptionsTracker().getSubscriptions();
-        },
-            
-        /**
-          * Return true if there are no info registered.
-          */
-        /*boolean*/ isEmpty: function(){
-            return (this.getConnectionsTracker().isEmpty() && this.getSubscriptionsTracker().isEmpty());
-         }
-     };
-     
-     // ***************************************************************
-     
-     /**
-      * @class Connections Tracker
-      */
-     var ConnectionsTracker = DojoModel.ConnectionsTracker = function(object){
-        // Object
-        this.object = object;
          
-        // Incoming connections (map<String, IncomingConnectionsForEvent>).
-        this._incomingConnections = new Collections.ComposedDictionary();
-        this._incomingConnectionsCount = 0;
-        
-        // Outgoing connections (Dictionary<(String|Function),Connection>).
-        this._outgoingConnections = new Collections.ComposedDictionary(); //must be Dictionary
-        this._outgoingConnectionsCount = 0;
-     };
-     ConnectionsTracker.prototype = 
-     {
-
-            // Add new incoming connection.
-            addIncomingConnection: function(con){
-                var incConnections = this._incomingConnections.get(con.event);
-                if (!incConnections){
-                    incConnections = [];
-                    this._incomingConnections.put(con.event, incConnections);
-                }
-                incConnections.push(con);
-                this._incomingConnectionsCount++;
-            },
-            
-            // Add new outgoing connection.
-            addOutgoingConnection: function(con){
-                var outConnections = this._outgoingConnections.get(con.method);
-                if (!outConnections){
-                    outConnections = [];
-                    this._outgoingConnections.put(con.method, outConnections);
-                }
-                outConnections.push(con);
-                this._outgoingConnectionsCount++;
-            },
-            
-            // Remove incoming connection.
-            removeIncomingConnection: function(con){
-                var cons = this._incomingConnections.get(con.event);
-                cons.splice(cons.indexOf(con),1); //xxxPERFORMANCE
-                // Remove event if it has no associated connections.
-                if (cons.length == 0) {
-                    this._incomingConnections.remove(con.event);
-                }
-                this._incomingConnectionsCount--;
-            },
-            
-            // Remove outgoing connection.
-            removeOutgoingConnection: function(con){
-                var cons = this._outgoingConnections.get(con.method);
-                cons.splice(cons.indexOf(con),1); //xxxPERFORMANCE
-                // Remove method if it has no associated connections.
-                if (cons.length == 0) {
-                    this._outgoingConnections.remove(con.method);
-                }
-                this._outgoingConnectionsCount--;
-            },
-            
-            /**
-             * Return the events with connections associated.
-             * @return an array with the events with connections associated.
-             */
-            /*array*/getIncommingConnectionsEvents: function(){
-                return this._incomingConnections.getKeys();
-            },
-            
-            /**
-             * Return the connections associated to the event passed as parameter.
-             * @param event the event
-             * @return an array with the connections associated to the event passed as parameter.
-             */
-            /*array*/getIncommingConnectionsForEvent: function(event){
-                var cons = this._incomingConnections.get(event);
-                return cons || [];
-            },
-            
-            /**
-             * Return the methods with connections associated.
-             * @return an array with the methods with connections associated.
-             */
-            /*array*/getOutgoingConnectionsMethods: function(){
-                return this._outgoingConnections.getKeys();
-            },
-            
-            /**
-             * Return the connections associated to the method passed as parameter.
-             * @param method the method
-             * @return an array with the connections associated to the method passed as parameter.
-             */
-            /*array*/getOutgoingConnectionsForMethod: function(method){
-                var cons = this._outgoingConnections.get(method);
-                return cons || [];
-            },
-            
-            /**
-             * Return true if there are no registered connections.
-             */
-            /*boolean*/ isEmpty: function(){
-             return (this.getIncommingConnectionsEvents().length == 0) &&
-                     (this.getOutgoingConnectionsMethods().length == 0);
-            },
-            
-            /*int*/getTotalCountOfIncommingConnections: function() {
-                return this._incomingConnectionsCount;
-            },
-
-            /*int*/getTotalCountOfOutgoingConnections: function() {
-                return this._outgoingConnectionsCount;
-            }
-
-     };
-     
-     
-     // ***************************************************************
-     
-     /**
-      * @class Subscriptions Tracker
-      */
-     var SubscriptionsTracker = DojoModel.SubscriptionsTracker = function(object){
-         // Object
-        this.object = object;
-         
-        // Subscriptions (Array<Connection>).
-        this._subscriptions = [];        
-     };
-     SubscriptionsTracker.prototype = 
-     {
-
-        // Add new subscription.
-        addSubscription: function(sub){
-            this._subscriptions.push(sub);
-        },
-        
-        // Remove subscription.
-        removeSubscription: function(sub){
-            //xxxPERFORMANCE
-            this._subscriptions.splice(this._subscriptions.indexOf(sub),1);
-        },
-        
-        /**
-         * Return the subscriptions for the object associated with this.object.
-         * @return an array with the subscriptions for the object associated with this.object.
-         */
-        /*array*/getSubscriptions: function(){
-            return this._subscriptions;
-        },
-        
-        /**
-         * Return true if there are no registered subscriptions.
-         */
-        /*boolean*/ isEmpty: function(){
-         return (this.getSubscriptions().length == 0);
-        },
-
-        /*int*/getTotalCountOfSubscriptions: function() {
-            return this._subscriptions.length;
-        }
-     };
-     
-     
-     // ***************************************************************
-     
-     
-     /**
-      * @class FunctionLinkResolver
-      */
-     var FunctionLinkResolver = DojoModel.FunctionLinkResolver = function(){};
-     FunctionLinkResolver.prototype = 
-     {
-             /**
-              * returns the listener fn object.
-              */
-             getListenerFunction : function() {
-                 var fn = null;
-                 if (typeof(this.method) == "function") {
-                    fn = this.method;
-                 } else if (this.context) {
-                    fn = this.context[this.method];
-                 }
-                 
-                 return this._getOriginalFunctionIfNeeded(fn);
-             },
-
-             _getOriginalFunctionIfNeeded : function(fn) {
-                 return DojoProxies.getDojoProxiedFunctionIfNeeded(fn); 
-             }    
-     };
-     
-     // ***************************************************************
-     
-     /**
-      * @class Connection
-      */
-     var Connection = DojoModel.Connection = function(obj, /*string|function*/event, context, method, originalFunction, dontFix, listenerMechanism, callerInfo){
-         this.clazz = "Connection";
-         this.obj = obj;
-         this.event = event;
-         this.context = context;
-         this.method = method;
-         this.originalFunction = originalFunction;
-         this.dontFix = dontFix;
-         this.listenerMechanism = listenerMechanism;
-         this.callerInfo = callerInfo;                
-     };
-     Connection.prototype = Obj.extend(FunctionLinkResolver.prototype, {
-
-         /**
-          * Destructor
-          */
-         destroy: function(){
-             this.clazz = null;
-             this.obj = null;
-             this.event = null;
-             this.context = null;
-             this.method = null;
-             this.originalFunction = null;
-             this.dontFix = null;
-             this.listenerMechanism = null;
-             this.callerInfo = null;
-         },
-         
-         getEventFunction: function() {
-            return DojoProxies.getDojoProxiedFunctionIfNeeded(this.originalFunction);
-         }         
      });
      
      // ***************************************************************
@@ -901,9 +648,338 @@ define([
         this.method = method;
         this.callerInfo = callerInfo;
      };
-     Subscription.prototype = Obj.extend(FunctionLinkResolver.prototype, {});
-        
+     Subscription.prototype = Obj.extend(FunctionLinkResolver.prototype, {
+                 
+         //used for passed in null contexts
+         _subsGlobalCtx: "topics-global-context", 
+         
+         destroy: function() {
+             delete this.clazz;
+             delete this.topic;
+             delete this.context;
+             delete this.method;
+             delete this.callerInfo;
+         },
+         
+         _getIndexableContext: function() {
+             return this.context || Subscription.prototype._subsGlobalCtx;
+         },
+         
+         register: function(tracker, handle) {
+             if(FBTrace.DBG_DOJO) {                        
+                 FBTrace.sysout("DOJO DEBUG: adding subscription", [handle, this]);
+             }            
+             
+             
+             this._addSubToGlobalList(tracker);
+             
+             if(FBTrace.DBG_DOJO_DBG) {
+                 FBTrace.sysout("new created Subs: ", subs);
+                 FBTrace.sysout("subsForTopic value: ", subsForTopic);                 
+             }
+
+             // Register subscription
+             var context = this._getIndexableContext(); //$HACK
+             this._addSubscriptionToTrackingInfo(tracker.getTrackingInfoFor(context));
+                                      
+             // Raised the onSubscriptionAdded event if there is registered handler.
+             tracker.fireEvent(ConnectionsAPI.ON_SUBSCRIPTION_ADDED);
+         },
+         
+         unregister: function(/*ConnectionsAPI*/tracker, handle) {
+             if(FBTrace.DBG_DOJO) {                        
+                 FBTrace.sysout("DOJO DEBUG: removing subscription", [handle, this]);
+             } 
+             
+             this._removeSubFromGlobalList(tracker);
+
+             var subsContext = this._getIndexableContext(); //$HACK
+             var trackingInfo = tracker.getTrackingInfoFor(subsContext);
+             
+             this._removeSubscriptionFromTrackingInfo(trackingInfo);           
+             tracker.trackingInfoDeleted(subsContext);
+                           
+             // Raised the onSubscriptionRemoved event if there is registered handler.
+             tracker.fireEvent(ConnectionsAPI.ON_SUBSCRIPTION_REMOVED);             
+         },
+
+         _addSubscriptionToTrackingInfo: function(trackingInfo) {
+             this._initializeTrackingInfo(trackingInfo);
+             
+             trackingInfo._subscriptions.push(this);
+         },
+
+         _removeSubscriptionFromTrackingInfo: function(trackingInfo) {
+             trackingInfo._subscriptions.splice(trackingInfo._subscriptions.indexOf(this),1);
+             if(trackingInfo._subscriptions.length == 0) {
+                 delete trackingInfo._subscriptions;
+             }                          
+         },
+
+         _initializeTrackingInfo: function(trackingInfo) {
+             if(!trackingInfo._subscriptions) {
+                 // Subscriptions.
+                 trackingInfo._subscriptions = [];
+             }             
+         },
+
+         _addSubToGlobalList: function(tracker) {
+             // Add subscription to global list.
+             if(!tracker.sharedSpace._allSubscriptions) {
+                 //_allSubscriptions : a map of (String, [Subscription])
+                 tracker.sharedSpace._allSubscriptions = new Collections.StringMap();
+                 tracker.sharedSpace._allSubscriptionsCount = 0;
+             }
+             
+             var subsForTopic = tracker.sharedSpace._allSubscriptions.get(this.topic);
+             if (!subsForTopic) {
+                 subsForTopic = [];
+                 tracker.sharedSpace._allSubscriptions.put(this.topic, subsForTopic);
+             }
+             subsForTopic.push(this);
+             tracker.sharedSpace._allSubscriptionsCount++;
+         },
+         
+         _removeSubFromGlobalList: function(tracker) {
+             // Remove subscription from global list
+             var subsForTopic = tracker.sharedSpace._allSubscriptions.get(this.topic);
+             subsForTopic.splice(subsForTopic.indexOf(this),1);
+             tracker.sharedSpace._allSubscriptionsCount--;
+             if(subsForTopic.length == 0) {
+                 tracker.sharedSpace._allSubscriptions.remove(this.topic);
+             }             
+         },
+
+         /* 
+          * ************************************************
+          * ************************************************
+          * SUBSCRIPTION STATIC METHODS
+          * ************************************************
+          * ************************************************
+          */
+
+         /**
+          * factory method
+          */
+         createSubscription: function(topic, context, method, callerInfo) {
+             return new Subscription(topic, context, method, callerInfo);
+         },
+
+         /**
+          * factory method . used to create subscriptions from dojo 1.7's topic.js 
+          */         
+         createTopicSubscription: function(topic, listener, callerInfo) {
+             return new Subscription(topic, null, listener, callerInfo);
+         },
+
+         /**
+          * Return the subscriptions map.
+          */
+         /*StringMap(String,[Subscription])*/ getGlobalSubscriptions: function(tracker) {
+             return tracker.sharedSpace._allSubscriptions || new Collections.StringMap();
+         },
+         
+         /*int*/getGlobalSubscriptionsCount: function(tracker) {
+             return tracker.sharedSpace._allSubscriptionsCount ? tracker.sharedSpace._allSubscriptionsCount : 0;
+         },
+         
+         /**
+          * Return the subscriptions list for the topic given as parameter.
+          * @param topic The topic.
+          */
+         /*[Subscription]*/ getGlobalSubscriptionsForTopic: function(tracker, /*String*/topic) {
+             return this.getGlobalSubscriptions(tracker).get(topic);
+         },
+
+         /**
+          * Return true if there are any subscription info registered for the object passed as parameter.
+          * @param object The object.
+          */
+         /*boolean*/ areThereAnySubscriptionFor: function(tracker, /*object*/object) {
+             var trackingInfo = tracker.getTrackingInfoFor(object, true);
+             return trackingInfo && !this.isEmpty(trackingInfo);
+         },
+
+         /*[Subscription]*/getSubscriptionsFrom: function(trackingInfo) {
+             return trackingInfo._subscriptions;
+         },
+         
+         /**
+          * Return true if there are no registered subscriptions.
+          */
+         /*boolean*/ isEmpty: function(trackingInfo) {
+          return !trackingInfo._subscriptions || trackingInfo._subscriptions.length == 0;
+         }
+
+     });
      
+     // ***************************************************************
+     
+     /**
+      * @class OnAspectObserver
+      */
+     var OnAspectObserver = DojoModel.OnAspectObserver = function(target, type, listener, originalFunction, callerInfo){
+        this.clazz = "OnAspectObserver";
+        this.target = target;
+        this.type = type;
+        this.listener = listener;
+        this.originalFunction = originalFunction; 
+        this.callerInfo = callerInfo;        
+     };
+     OnAspectObserver.prototype = Obj.extend(FunctionLinkResolver.prototype, {
+         
+         destroy: function() {
+             delete this.clazz;
+             delete this.target;
+             delete this.type;
+             delete this.listener;
+             delete this.originalFunction;
+             delete this.callerInfo;             
+         },
+         
+         getEventFunction: function() {
+             return DojoProxies.getDojoProxiedFunctionIfNeeded(this.originalFunction);
+         },
+
+         register: function(tracker, handle) {
+             if(FBTrace.DBG_DOJO) {
+                 FBTrace.sysout("DOJO DEBUG adding OnAspectObserver", [handle, this]);
+             }
+             
+             // Add OnAspect to global list.
+             if(!tracker.sharedSpace._allOnAspectObserversArray) {
+                 tracker.sharedSpace._allOnAspectObserversArray = [];
+             }
+             tracker.sharedSpace._allOnAspectObserversArray.push(this);
+             
+             // Register incoming connection
+             this._addOnAspectObserver(tracker.getTrackingInfoFor(this.target));
+                          
+             tracker.fireEvent(ConnectionsAPI.ON_ONASPECTOBSERVER_ADDED);
+         },
+         
+         unregister: function(/*ConnectionsAPI*/tracker, handle) {             
+             if(FBTrace.DBG_DOJO) {
+                 FBTrace.sysout("DOJO DEBUG removing OnAspectObserver", [handle, this]);
+             }
+             
+             // remove OnAspect from global list.
+             //FIXME performance
+             tracker.sharedSpace._allOnAspectObserversArray.splice(tracker.sharedSpace._allOnAspectObserversArray.indexOf(this), 1);
+             
+             // Remove incoming connection
+             this._removeOnAspectObserver(tracker.getTrackingInfoFor(this.target));
+             tracker.trackingInfoDeleted(this.target);
+             
+             tracker.fireEvent(ConnectionsAPI.ON_ONASPECTOBSERVER_REMOVED);
+         },
+
+         _initializeTrackingInfo: function(trackingInfo) {
+             if(!trackingInfo._onAspectObservers) {
+                 //Dictionary<String|Function, [OnAspectObserver]>
+                 trackingInfo._onAspectObservers = new Collections.ComposedDictionary();
+                 trackingInfo._onAspectObserversCount = 0;                 
+             }             
+         },
+         
+         _addOnAspectObserver: function(trackingInfo) {
+             this._initializeTrackingInfo(trackingInfo);
+             
+             var observers = trackingInfo._onAspectObservers.get(this.type);
+             if (!observers){
+                 observers = [];
+                 trackingInfo._onAspectObservers.put(this.type, observers);
+             }
+             observers.push(this);
+             trackingInfo._onAspectObserversCount++;
+         },
+         
+         _removeOnAspectObserver: function(trackingInfo) {
+             var arr = trackingInfo._onAspectObservers.get(this.type);
+             arr.splice(arr.indexOf(this),1); //FIXME PERFORMANCE
+             // Remove event if it has no associated connections.
+             if (arr.length == 0) {
+                 trackingInfo._onAspectObservers.remove(this.type);
+             }            
+             trackingInfo._onAspectObserversCount--;
+             
+             if(trackingInfo._onAspectObserversCount == 0) {
+                 if(trackingInfo._onAspectObservers) { 
+                     trackingInfo._onAspectObservers.destroy();
+                 }
+                 delete trackingInfo._onAspectObservers;
+                 delete trackingInfo._onAspectObserversCount;
+             }
+         },
+         
+         /**
+          * Return true if there are no registered connections.
+          */
+         /*boolean*/ isEmpty: function(trackingInfo) {
+             return !trackingInfo._onAspectObserversCount || trackingInfo._onAspectObserversCount == 0;
+         },
+         
+
+         /* 
+          * ************************************************
+          * ************************************************
+          * OnAspectObserver STATIC METHODS
+          * ************************************************
+          * ************************************************
+          */
+
+         /**
+          * Return true if there are any connection info registered for the object passed as parameter.
+          * @param tracker
+          * @param object The object.
+          */
+         /*boolean*/ areThereAnyOnAspectsFor: function(tracker, /*object*/object) {
+             var trackingInfo = tracker.getTrackingInfoFor(object, true);
+             return trackingInfo && !this.isEmpty(trackingInfo);
+         },
+         
+         
+         getGlobalOnAspectObserversCount: function(tracker) {
+             var arr = tracker.sharedSpace._allOnAspectObserversArray;
+             return arr ? arr.length : 0;
+         },
+
+         /**
+          * @return array
+          */         
+         /*[OnAspectObserver]*/getGlobalOnAspectObservers: function(tracker) {
+             return tracker.sharedSpace._allOnAspectObserversArray || [];
+         },
+         
+         /**
+          * Return the events with associated observers.
+          * @return array
+          */
+         /*array*/getObservedEvents: function(trackingInfo) {
+             if(!trackingInfo._onAspectObservers) {
+                 return [];
+             }             
+             return trackingInfo._onAspectObservers.getKeys();
+         },
+
+         /**
+          * @param type the type
+          * @return array
+          */
+         /*array*/getOnAspectObserversForEvent: function(trackingInfo, type) {
+             if(!trackingInfo._onAspectObservers) {
+                 return [];
+             }
+             var obs = trackingInfo._onAspectObservers.get(type);
+             return obs || [];
+         },
+         
+         /*int*/ getOnAspectObserversCount: function(trackingInfo) {
+             return trackingInfo._onAspectObserversCount;
+         }
+         
+     });
+          
      // ***************************************************************
      
      /**
@@ -1008,13 +1084,12 @@ define([
 
     DojoModel.EventsRegistrator = EventsRegistrator;
     
-    DojoModel.ConnectionsAPI = ConnectionsAPI; 
-    DojoModel.ConnectionsTracker = ConnectionsTracker;
-    DojoModel.SubscriptionsTracker = SubscriptionsTracker;
+    DojoModel.ConnectionsAPI = ConnectionsAPI;
     
     DojoModel.FunctionLinkResolver = FunctionLinkResolver;
     DojoModel.Connection = Connection;
     DojoModel.Subscription = Subscription;
+    DojoModel.OnAspectObserver = OnAspectObserver;
     DojoModel.ConnectionArraySorter = ConnectionArraySorter;
 
     return DojoModel;

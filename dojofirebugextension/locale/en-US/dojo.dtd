@@ -10,4 +10,8 @@
 <!ENTITY  dojo.subscriptions.label         "All subscriptions">
 <!ENTITY  dojo.subscriptions.tooltip       "View all subscriptions">
 
+<!ENTITY  dojo.onAspectObservers.label         "On/Aspect">
+<!ENTITY  dojo.onAspectObservers.tooltip       "View all on/aspects">
+
+
 <!ENTITY  window.contextmenuitem.inspect       "Inspect in Dojo panel">

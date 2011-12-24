@@ -64,6 +64,8 @@ var getMethodLabel = DojoReps.getMethodLabel = function(method) {
     var label = '';
     if (typeof(method) == "string") {
         label = method;
+    } else if(method.displayName) {
+        label = method.displayName;
     } else {
         //xxxPERFORMANCE
         //TODO encapsulate in our debugger file
@@ -173,6 +175,7 @@ DojoReps.DojoObjectRep = domplate(FirebugReps.Obj,
 });
 
 //************************************************************************************************
+//Rep used to visually represent Widgets across Firebug
 DojoReps.DijitRep = domplate(FirebugReps.Obj,
 {
     tag: FirebugReps.OBJECTLINK(
@@ -279,6 +282,7 @@ DojoReps.DijitRep = domplate(FirebugReps.Obj,
 });
 
 //************************************************************************************************
+//Rep used for Connection objects, across Firebug
 DojoReps.ConnectionRep = domplate(FirebugReps.Obj,
 {
     inspectable: false,
@@ -315,6 +319,7 @@ DojoReps.ConnectionRep = domplate(FirebugReps.Obj,
 });
 
 //************************************************************************************************
+//Rep used for Subscription objects, across Firebug
 DojoReps.SubscriptionRep = domplate(FirebugReps.Obj, {
     inspectable: false,
     
@@ -349,6 +354,174 @@ DojoReps.SubscriptionRep = domplate(FirebugReps.Obj, {
 });        
 
 //************************************************************************************************
+//Rep used for OnAspectObserver objects, across Firebug
+DojoReps.OnAspectObserverRep = domplate(FirebugReps.Obj,
+{
+    inspectable: false,
+    
+    tagOutgoing: SPAN(
+            SPAN({}, "$object.type|getMethodLabel"),
+            " -> ",
+            TAG(FirebugReps.OBJECTLINK("$title"), {object: "$object|getFunctionObject", className: "object", title: "$object.listener|getMethodLabel"})
+        ),
+    tagEmbedded: SPAN(            
+            TAG(FirebugReps.OBJECTLINK("$title"), {object: "$object|getFunctionObject", className: "object", title: "$object.listener|getMethodLabel"})
+        ),
+    shortTag: DIV({},
+            SPAN({"class": "inline-connection"}, "on/aspect("),
+            TAG(FirebugReps.OBJECTLINK("$object"), {object: "$object.target", className: "object"}),
+            SPAN({"class": "inline-connection"}, "->"),
+            SPAN({"class": "inline-event"}, "$object.type|getMethodLabel"), //string|function
+            SPAN({"class": "inline-connection"}, ")==>"),
+            SPAN({"class": "inline-connection"}, "Exec:("),
+            TAG(FirebugReps.OBJECTLINK("$title"), {object: "$object|getFunctionObject", className: "object", title: "$object.listener|getMethodLabel"}),
+            SPAN({"class": "inline-connection"}, ")")
+        ),
+        
+    getMethodLabel: getMethodLabel,
+    getFunctionObject: getFunctionObject,
+    supportsObject: function(object, type) {
+        return object['clazz'] == 'OnAspectObserver';
+    },
+
+    getRep: getRep
+});
+
+//************************************************************************************************
+//This is the rep for the OnAspectObservers displayed in the Side panel, for a selected object (typically a Widget)
+DojoReps.OnAspectObserversArrayRep = domplate(FirebugReps.Obj,
+{
+  inspectable: false,
+  
+  tag: DIV({"class": "connectionsInfo"},
+          // Header - Object
+          DIV({"class": "object"}, 
+              TAG("$object.object|getRep", {object: "$object.object", className: "object"})
+          ),
+          
+          DIV({"style": "display:$object|onAspectObserversNotEmpty"},
+              DIV({"class": "collapsable-container container-opened"},
+                  DIV({"class": "collapsable-label", onclick: "$onContainerClick"},
+                      DIV({"class": "incomingConnections"},
+                          Locale.$STR('title.Listeners', DOJO_BUNDLE),
+                          " ($object.trackingInfo|getTotalCountOfOnAspectObservers)"
+                      )
+                  ),
+                  DIV({"class": "collapsable-content"},
+                      FOR("descriptor", "$object|iterator",
+                          DIV({"class": "collapsable-container container-opened"},
+                              DIV({"class": "collapsable-label", onclick: "$onContainerClick"},
+                                  DIV({"class": "event dojo-eventFunction", _referencedObject: "$descriptor"}, "$descriptor.type|getMethodLabel $descriptor.observers|getNumberOfItemsIfNeeded")
+                              ),
+                              DIV({"class": "collapsable-content"},
+                                  FOR("observer", "$descriptor.observers",
+                                      DIV({"class": "dojo-onaspectobserver connectionOut", _referencedObject: "$observer"}, 
+                                          TAG(DojoReps.OnAspectObserverRep.tagEmbedded, {object: "$observer", className: "connection"})
+                                      )
+                                  )
+                              )
+                          )
+                      )
+                  )
+              )
+          )
+  ),
+      
+  /*string*/getNumberOfItemsIfNeeded: function(/*array*/ arr) {
+      return arr.length > 1 ? " ("+arr.length+")" : "";
+  },
+  /*array*/iterator: function(/*object*/objWithTrackingInfo) {
+      var trackingInfo = objWithTrackingInfo.trackingInfo;
+      var sourceObject = objWithTrackingInfo.object;
+      var descriptors = [];
+      var onAspectObserverEvents = DojoModel.OnAspectObserver.prototype.getObservedEvents(trackingInfo);
+      var i;
+      for (i = 0; i < onAspectObserverEvents.length; i++ ) {
+          var type = onAspectObserverEvents[i];
+          var observers = DojoModel.OnAspectObserver.prototype.getOnAspectObserversForEvent(trackingInfo, type); //array            
+          descriptors.push(new OnAspectDescriptor(sourceObject, type, observers));
+      }
+      return descriptors;
+    },
+    onAspectObserversNotEmpty: function(/*object*/objWithTrackingInfo) {
+        return this._arrayNotEmpty(this.iterator(objWithTrackingInfo));
+    },      
+    _arrayNotEmpty: function(array) {
+      return (array.length == 0) ? "none" : "";
+    },
+    getTotalCountOfOnAspectObservers: function(/*TrackingInfo*/trackingInfo) {
+        return DojoModel.OnAspectObserver.prototype.getOnAspectObserversCount(trackingInfo);
+    },
+    getMethodLabel: getMethodLabel,
+    getFunctionObject: getFunctionObject,
+//    supportsObject: function(object, type) {
+//        return object['clazz'] == 'ConnectionsInfo';
+//    },
+    getRep: getRep,
+    onContainerClick: onContainerClick,
+    toggleContainer: toggleContainer,
+    getMethodLabel:getMethodLabel
+});
+
+/**
+ * @class OnAspectDescriptor
+ */
+var OnAspectDescriptor = function(obj, /*string|function*/type, /*array*/observers){
+     this.obj = obj;
+     this.type = type;
+     this.observers = observers;
+};
+  
+OnAspectDescriptor.prototype =
+{
+     /*function*/getEventFunction: function(){
+            return (this.connections.length > 0) ? this.connections[0].getEventFunction() : null;
+     }             
+};
+
+//************************************************************************************************
+//Rep for on/aspects table displayed in the main panel
+DojoReps.OnAspectObserversTableRep = domplate(
+      {
+        tag:
+          DIV({"id": "connections-table"},
+              TABLE({"class": "connections-table", "cellpadding": 0, "cellspacing": 0},
+                      TBODY(
+                          TR({"class": "connectionsPropertyHeaders"},
+                                  //TODO preyna sorted table: enable again!
+                                  TH({/*"class": "$priorityCriteriaArray|objectPriorityOrder", "onclick": "$sorterObject"*/}, Locale.$STR('title.onAspect.Target', DOJO_BUNDLE)),
+                                  TH({/*"class": "$priorityCriteriaArray|eventPriorityOrder", "onclick": "$sorterEvent"*/},Locale.$STR('title.onAspect.Type', DOJO_BUNDLE)),
+                                  TH({/*"class": "$priorityCriteriaArray|methodPriorityOrder", "onclick": "$sorterMethod"*/},Locale.$STR('title.onAspect.Listener', DOJO_BUNDLE))
+                            ),
+                          FOR("obs", "$observers",
+                              TR({"class": "dojo-onaspectobserver row-$null|changeLineType", _referencedObject: "$obs"},
+                                  TD({"class":"dojo-onaspectobserver-target dojo-tracked-obj", _referencedObject: "$obs.target"},
+                                      TAG("$obs.target|getRep", {object: "$obs.target", className: "object"})
+                                  ),
+                                  TD({"class": "dojo-onaspectobserver-type", _referencedObject: "$obs.type"}, "$obs.type|getMethodLabel"
+                                  ),
+                                  TD({"class": "dojo-onaspectobserver-listener", _referencedObject: "$obs.listener"},
+                                      TAG(FirebugReps.OBJECTLINK("$title"),
+                                              {object: "$obs|getFunctionObject", className: "object", title: "$obs.listener|getMethodLabel"})
+                                  )
+                              )
+                          )
+                      )
+                  )
+              ),
+        getMethodLabel: getMethodLabel,
+        getFunctionObject: getFunctionObject,
+        getRep: getRep,
+        changeLineType: function(object, type) {
+          var type = this.counter = this.counter || "even";
+          this.counter = (this.counter == 'even') ? "odd" : "even";
+          return type;
+        }
+  }
+);
+
+//************************************************************************************************
+//This is the rep for the Subsciptions displayed in a Side panel, for a selected object (typically a Widget)
 DojoReps.SubscriptionsArrayRep = domplate(FirebugReps.Obj,
 {
     inspectable: false,
@@ -364,15 +537,17 @@ DojoReps.SubscriptionsArrayRep = domplate(FirebugReps.Obj,
             )
         ),
     getRep: getRep,
-    /*array*/subscriptionsIterator: function(/*SubscriptionsTracker*/connInfo){
-        return connInfo.getSubscriptions();
+    /*array*/subscriptionsIterator: function(/*object*/objWithTrackingInfo){
+        var trackingInfo = objWithTrackingInfo.trackingInfo;
+        return DojoModel.Subscription.prototype.getSubscriptionsFrom(trackingInfo);
+
     },
     getMethodLabel: getMethodLabel,
     getFunctionObject: getFunctionObject
 });
 
 //************************************************************************************************
-
+//This is the rep for the Connections displayed in the Side panel, for a selected object (typically a Widget)
 DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
 {
     inspectable: false,
@@ -389,7 +564,7 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
                     DIV({"class": "collapsable-label", onclick: "$onContainerClick"},
                         DIV({"class": "incomingConnections"},
                             Locale.$STR('title.Listened by', DOJO_BUNDLE),
-                            " ($object|getTotalCountOfIncommingConnections)"
+                            " ($object.trackingInfo|getTotalCountOfIncommingConnections)"
                         )
                     ),
                     DIV({"class": "collapsable-content"},
@@ -417,7 +592,7 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
                     DIV({"class": "collapsable-label", onclick: "$onContainerClick"},
                         DIV({"class": "outgoingConnections"}, 
                             Locale.$STR('title.Listens to', DOJO_BUNDLE),
-                            " ($object|getTotalCountOfOutgoingConnections)"
+                            " ($object.trackingInfo|getTotalCountOfOutgoingConnections)"
                         )
                     ),
                     DIV({"class": "collapsable-content"},
@@ -446,45 +621,49 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
     /*string*/getNumberOfItemsIfNeeded: function(/*array*/ arr) {
         return arr.length > 1 ? " ("+arr.length+")" : "";
     },
-    /*array*/incommingConnectionsIterator: function(/*ConnectionsTracker*/conInfo) {
+    /*array*/incommingConnectionsIterator: function(/*object*/objWithTrackingInfo) {
+        var conInfo = objWithTrackingInfo.trackingInfo;
+        var sourceObject = objWithTrackingInfo.object;
         var incConnect = [];
-        var incommingConnectionsEvents = conInfo.getIncommingConnectionsEvents();
+        var incommingConnectionsEvents = DojoModel.Connection.prototype.getIncommingConnectionsEvents(conInfo);
         var i;
         for (i = 0; i < incommingConnectionsEvents.length; i++ ) {
-            var obj = conInfo.object;
+            var obj = sourceObject;
             var event = incommingConnectionsEvents[i];
-            var connections = conInfo.getIncommingConnectionsForEvent(event); //array            
+            var connections = DojoModel.Connection.prototype.getIncommingConnectionsForEvent(conInfo, event); //array            
             incConnect.push(new IncomingConnectionsDescriptor(obj, event, connections));
         }
         return incConnect;
       },
-      /*array*/outgoingConnectionsIterator: function(/*ConnectionsTracker*/outCons) {
-        var outConnect = [];
-        var outgoingConnectionsMethods = outCons.getOutgoingConnectionsMethods();
+      /*array*/outgoingConnectionsIterator: function(/*object*/objWithTrackingInfo) {
+        var outCons = objWithTrackingInfo.trackingInfo;
+        var sourceObject = objWithTrackingInfo.object;
+        var outConnect = [];        
+        var outgoingConnectionsMethods = DojoModel.Connection.prototype.getOutgoingConnectionsMethods(outCons);
         var i;
         for (i = 0; i < outgoingConnectionsMethods.length; i++) {
             var m = outgoingConnectionsMethods[i];
-            var connections = outCons.getOutgoingConnectionsForMethod(m);
-            var context = outCons.object;
+            var connections = DojoModel.Connection.prototype.getOutgoingConnectionsForMethod(outCons, m);
+            var context = sourceObject;
             var method = m;
             outConnect.push(new OutgoingConnectionsDescriptor(context, method, connections));
         }
         return outConnect;
       },
-      incomingConnectionsNotEmpty: function(/*ConnectionsTracker*/incCons) {
-          return this.arrayNotEmpty(this.incommingConnectionsIterator(incCons));
+      incomingConnectionsNotEmpty: function(/*object*/objWithTrackingInfo) {
+          return this.arrayNotEmpty(this.incommingConnectionsIterator(objWithTrackingInfo));
       },      
-      outgoingConnectionsNotEmpty: function(/*ConnectionsTracker*/outCons) {
-        return this.arrayNotEmpty(this.outgoingConnectionsIterator(outCons));
+      outgoingConnectionsNotEmpty: function(/*object*/objWithTrackingInfo) {
+        return this.arrayNotEmpty(this.outgoingConnectionsIterator(objWithTrackingInfo));
       },
       arrayNotEmpty: function(array) {
         return (array.length == 0) ? "none" : "";
       },
-      getTotalCountOfOutgoingConnections: function(/*ConnectionsTracker*/outCons) {
-          return outCons.getTotalCountOfOutgoingConnections();
+      getTotalCountOfOutgoingConnections: function(/*TrackingInfo*/trackingInfo) {
+          return DojoModel.Connection.prototype.getOutgoingConnectionsCount(trackingInfo);
       },
-      getTotalCountOfIncommingConnections: function(/*ConnectionsTracker*/incCons) {
-          return incCons.getTotalCountOfIncommingConnections();
+      getTotalCountOfIncommingConnections: function(/*TrackingInfo*/trackingInfo) {
+          return DojoModel.Connection.prototype.getIncommingConnectionsCount(trackingInfo);
       },
       getMethodLabel: getMethodLabel,
       getFunctionObject: getFunctionObject,
@@ -499,6 +678,7 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
 
 /**
  * @class IncomingConnectionsDescriptor
+ * TODO check if this class is useful . Check if its a hack
  */
 var IncomingConnectionsDescriptor = DojoReps.IncomingConnectionsDescriptor = function(obj, /*string|function*/event, /*array*/connections){
      this.obj = obj;
@@ -515,6 +695,7 @@ IncomingConnectionsDescriptor.prototype =
 
 /**
  * @class OutgoingConnectionsDescriptor
+ * TODO check if this class is useful . Check if its a hack
  */
 var OutgoingConnectionsDescriptor = DojoReps.OutgoingConnectionsDescriptor = function(context, method, /*array*/connections){
      this.context = context;
@@ -525,6 +706,7 @@ OutgoingConnectionsDescriptor.prototype = Obj.extend(DojoModel.FunctionLinkResol
 
 
 //************************************************************************************************
+//This is the rep for the Subscriptions displayed in the main panel
 DojoReps.SubscriptionsRep = domplate(FirebugReps.Obj,
 {
     inspectable: false,
@@ -568,6 +750,7 @@ DojoReps.SubscriptionsRep = domplate(FirebugReps.Obj,
 });
 
 //************************************************************************************************
+//Rep for connections table displayed in the main panel
 DojoReps.ConnectionsTableRep = domplate(
         {tag:
             DIV({"id": "connections-table"},
@@ -962,6 +1145,7 @@ DojoReps.registerReps = function() {
     Firebug.registerRep(this.ConnectionRep);
     Firebug.registerRep(this.SubscriptionRep);
     Firebug.registerRep(this.ConnectionsInfoRep);    
+    Firebug.registerRep(this.OnAspectObserverRep);
 };
 
 //called by dojofirebugextension
@@ -973,7 +1157,8 @@ DojoReps.unregisterReps = function() {
     Firebug.unregisterRep(this.DijitRep);
     Firebug.unregisterRep(this.ConnectionRep);
     Firebug.unregisterRep(this.SubscriptionRep);
-    Firebug.unregisterRep(this.ConnectionsInfoRep);    
+    Firebug.unregisterRep(this.ConnectionsInfoRep);
+    Firebug.unregisterRep(this.OnAspectObserverRep);
 };
 
 

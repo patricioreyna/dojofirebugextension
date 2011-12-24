@@ -64,7 +64,8 @@ fbDojo_loadExtension = function() {
     // Load main.js module (the entry point of the extension) + a support for tracing.
     Firebug.require(config, [
         extensionName + "/main",
-        "firebug/lib/trace"
+        "firebug/lib/trace",
+        "dojo/core/trace-error-log" //must be the last item always
     ],
         function(Extension, FBTrace)
         {
@@ -79,8 +80,13 @@ fbDojo_loadExtension = function() {
             }
             catch (err)
             {
-                if (FBTrace.DBG_ERRORS)
+                if (FBTrace.DBG_DOJO) {
+                    FBTrace.sysout(err);
+                }
+                
+                if (FBTrace.DBG_ERRORS) {
                     FBTrace.sysout("Firebug Overlay; ERROR " + err);
+                }
             }
         }
     );

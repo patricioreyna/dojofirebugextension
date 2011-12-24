@@ -185,8 +185,10 @@ define([
        destroy: function(){
            this._keys.splice(0, this._keys.length);
            this._keys = null;
+           delete this._keys;
            this._values.splice(0, this._values.length);
            this._values = null;
+           delete this._values;
        }         
     });
         
@@ -293,8 +295,10 @@ define([
            // Destructor
            destroy: function(){
                this._keys.splice(0, this._keys.length);
+               delete this._keys;
                this._values.splice(0, this._values.length);
                this._values = null;
+               delete this._values;
            },
            
            
@@ -426,6 +430,7 @@ define([
        // Destructor
        destroy: function(){
            this._map = null;
+           delete this._map;
        } 
     });
     
@@ -484,7 +489,9 @@ define([
        // Destructor
        destroy: function(){
            this._hashcodeKeyedValues.destroy();
+           delete this._hashcodeKeyedValues;
            this._primitiveKeyedValues.destroy();
+           delete this._primitiveKeyedValues;
        } 
     });
 

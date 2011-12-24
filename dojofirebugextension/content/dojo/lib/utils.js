@@ -21,6 +21,16 @@ define([
         fn.__exposedProps__.call = "r";
     };    
 
+    //required as of FF 4
+    DojoUtils._addMozillaClientAccess = function(obj, propArray) {
+        if(!obj.__exposedProps__) {
+            obj.__exposedProps__ = {};
+        }        
+        for(var i=0; i < propArray.length; i++) {
+            obj.__exposedProps__[propArray[i]] = "r";
+        }        
+    };    
+
    
     return DojoUtils; 
 });

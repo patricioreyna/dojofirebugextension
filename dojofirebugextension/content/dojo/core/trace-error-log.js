@@ -21,10 +21,10 @@ define(["firebug/lib/trace"
             if (message instanceof Error) {
                 var e = message;
                 message = "ERROR - message: ["+ e.message + "] fileName: " + e.fileName + " lineNumber: " + e.lineNumber;
-            } else if (obj instanceof Error) {
+            } else if (obj && obj instanceof Error) {
                 var e = obj;
                 obj = "ERROR - message: ["+ e.message + "] fileName: " + e.fileName + " lineNumber: " + e.lineNumber;
-            } else if (obj instanceof Array) {
+            } else if (obj && obj.length) {
                 var a = obj;
                 obj = "[";
                 for(var i=0; i<a.length; i++) { obj += a[i] + ", "; }
@@ -33,8 +33,10 @@ define(["firebug/lib/trace"
             fbTraceReplacementUsingErrorLogEnabled_logMsg(message + (obj || ""));        
         };
         
+        //FBTrace options configuration
         FBTrace.DBG_DOJO = true;
         FBTrace.DBG_DOJO_CONN_COUNTER = true;
+        FBTrace.DBG_DOJO_DBG_HANDLES = false;
     }
     //end HACK
 

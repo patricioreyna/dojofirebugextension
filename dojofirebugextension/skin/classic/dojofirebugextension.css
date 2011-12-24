@@ -239,6 +239,15 @@
 	padding-left: 20px;
 }
 
+.countOfOnAspectObserverLabel{
+	margin-left: 1px;
+    background-image:url('chrome://dojofirebugextension/skin/connection.gif');
+    background-repeat:no-repeat;
+	background-position:left center;
+	padding: 2px;
+	padding-left: 20px;
+}
+
 .countOfWidgetsLabel {
 	margin-left: 1px;
     background-image:url('chrome://dojofirebugextension/skin/widgetIcon.3.png');

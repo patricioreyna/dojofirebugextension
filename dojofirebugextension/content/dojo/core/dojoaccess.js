@@ -536,10 +536,10 @@ DojoAccess.DojoAccessor.prototype =
                     widget._connects.forEach(function(handleOrArray) {
                         if(self.isArray(handleOrArray)) {
                             handleOrArray.forEach(function(handle) {
-                                connects.push(tracker.getConnectionByHandle(handle));
+                                connects.push(tracker.getObserver(handle));
                             });
                         } else {
-                            connects.push(tracker.getConnectionByHandle(handleOrArray));
+                            connects.push(tracker.getObserver(handleOrArray));
                         }
                     }, this);                        
 
@@ -552,7 +552,7 @@ DojoAccess.DojoAccessor.prototype =
                  * with _connects field as well on that dojo version). */
                 if(widget._subscribes) {
                     var subs = widget._subscribes.map(function(handle) {
-                        return tracker.getSubscriptionByHandle(handle);
+                        return tracker.getObserver(handle);
                     }, this);
                     if(subs.length > 0) {
                         props['subscribes'] = subs;
@@ -674,7 +674,7 @@ DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototy
                 if(self.isArray(handleOrArray)) {
                     handleOrArray.forEach(function(handle) {
                         
-                        var connOrSub = tracker.getConnectionByHandle(handle);
+                        var connOrSub = tracker.getObserver(handle);
                         if(connOrSub.clazz == 'Connection') {
                             connects.push(connOrSub);
                         } else {
@@ -682,7 +682,7 @@ DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototy
                         }
                     });
                 } else {
-                    var connOrSub = tracker.getConnectionByHandle(handleOrArray);
+                    var connOrSub = tracker.getObserver(handleOrArray);
                     if(connOrSub.clazz == 'Connection') {
                         connects.push(connOrSub);
                     } else {
@@ -713,11 +713,15 @@ var Version = function() {
     this.major = 0;
     this.minor = 0;
     this.patch = 0;
-    this.flag;
+    this.flag = "";
 };
 Version.prototype = {
         //factory method
         fromVersionString: function(/*string*/ versionString) {
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO fromVersionString input: " + versionString);
+            }
+
             var v = new Version();
             // Adapt to version scheme.
             
@@ -744,15 +748,29 @@ Version.prototype = {
             v.major = parseInt(values[0]) || 0;
             v.minor = parseInt(values[1]) || 0;
             v.patch = parseInt(values[2]);
+            
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO fromVersionString: " + v.toString());
+            }
+
             return v;
         },
         //factory method
         fromDojoVersion: function(/*dojo's version object*/ dojoVersion) {
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO fromDojoVersion input: " + dojoVersion);
+            }
+
             var v = new Version();
             v.major = dojoVersion.major;
             v.minor = dojoVersion.minor;
             v.patch = dojoVersion.patch;
             v.flag = dojoVersion.flag;
+
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO fromDojoVersion: " + v.toString());
+            }
+
             return v;
         },
         
@@ -761,6 +779,9 @@ Version.prototype = {
         },
 
         /*int*/compare: function(/*Version*/ anotherVersion, /*bool (optional)*/strict) {
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO Version comparison - this version: " + this.toString() + " . anotherVersion: " + anotherVersion.toString());
+            }
             return -1 * anotherVersion._compareAgainstVersion(this, strict);
         },
         
@@ -772,6 +793,10 @@ Version.prototype = {
             } else if(strict && this.patch != anotherVersion.patch) {
                 return this.patch - anotherVersion.patch;
             } else if(strict && this.flag != anotherVersion.flag) {
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO this flag: " + this.flag + " . anotherVersion flag: " + anotherVersion.flag);
+                }
+                
                 if(!this.flag) {
                     return 1;
                 } else if(!anotherVersion.flag) {

@@ -24,6 +24,7 @@
         <command id="cmd_dojofirebugextensionGetDojoWidgetButton" oncommand="Firebug.DojoExtension.dojofirebugextensionModel.onShowWidgetsButton(Firebug.currentContext)"/>
         <command id="cmd_dojofirebugextensionViewConnectionsInTable" oncommand="Firebug.DojoExtension.dojofirebugextensionModel.onShowConnectionsInTableButton(Firebug.currentContext)"/>
 		<command id="cmd_dojofirebugextensionViewSubscriptions" oncommand="Firebug.DojoExtension.dojofirebugextensionModel.onShowSubscriptionsButton(Firebug.currentContext)"/>
+		<command id="cmd_dojofirebugextensionViewOnAspectObservers" oncommand="Firebug.DojoExtension.dojofirebugextensionModel.onShowOnAspectObserversButton(Firebug.currentContext)"/>
 		<command id="cmd_dojofirebugextension_inspect" oncommand="Firebug.DojoExtension.dojofirebugextensionModel.inspectFromContextMenu(document.popupNode);"/>
     </commandset>
 
@@ -43,6 +44,10 @@
                     label="&dojo.subscriptions.label;" class="toolbar-text-button"
                     type="radio" group="dojoOptions" 
                     tooltiptext="&dojo.subscriptions.tooltip;" command="cmd_dojofirebugextensionViewSubscriptions"/>
+                <toolbarbutton id="fbDojo_onAspectObserversButton"
+                    label="&dojo.onAspectObservers.label;" class="toolbar-text-button"
+                    type="radio" group="dojoOptions" 
+                    tooltiptext="&dojo.onAspectObservers.tooltip;" command="cmd_dojofirebugextensionViewOnAspectObservers"/>
 
 				<span id="fbDojo_dojoFilter-boxes">
 	                <!-- from box -->

@@ -270,6 +270,10 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         this._getDojoPanel(context).showSubscriptions(context);
     },
 
+    onShowOnAspectObserversButton: function(/*fbug context*/context) {
+        this._getDojoPanel(context).showOnAspectObserversInTable(context);
+    },
+    
     //fbug 1.8 compatible
     /**
      * called on each dojo file loaded (actually for every file).
