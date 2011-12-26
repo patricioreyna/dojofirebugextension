@@ -17,8 +17,8 @@ define([
         "dojo/core/dojomodel",
         "dojo/core/prefs",
         "dojo/core/proxies",       
-        "dojo/lib/utils",
-        "dojo/core/trace-error-log" //must be the last item always
+        "dojo/lib/utils"/*,
+        "dojo/core/trace-error-log" //must be the last item always */
        ], function dojoHooksFactory(FBL, Obj, FBTrace, Wrapper, DojoAccess, DojoModel, DojoPrefs, DojoProxies, DojoUtils)
 {
         
