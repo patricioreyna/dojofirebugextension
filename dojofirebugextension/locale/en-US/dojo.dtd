@@ -12,6 +12,3 @@
 
 <!ENTITY  dojo.onAspectObservers.label         "On/Aspect">
 <!ENTITY  dojo.onAspectObservers.tooltip       "View all on/aspects">
-
-
-<!ENTITY  window.contextmenuitem.inspect       "Inspect in Dojo panel">

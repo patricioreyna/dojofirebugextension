@@ -14,12 +14,6 @@
     	<stringbundle id="fbDojo_dojostrings" src="chrome://dojofirebugextension/locale/dojo.properties"/>
 	</stringbundleset>
 
-    <!-- Firefox page context menu -->
-    <menupopup id="contentAreaContextMenu">
-        <menuitem id="fbDojo_menu_dojofirebugextension_inspect" insertafter="menu_firebugInspect" label="&window.contextmenuitem.inspect;"
-                  command="cmd_dojofirebugextension_inspect" class="menuitem-iconic fbInternational" hidden="true"/>
-    </menupopup>    
-
     <commandset id="mainCommandSet">
         <command id="cmd_dojofirebugextensionGetDojoWidgetButton" oncommand="Firebug.DojoExtension.ui.onShowWidgetsButton(Firebug.currentContext)"/>
         <command id="cmd_dojofirebugextensionViewConnectionsInTable" oncommand="Firebug.DojoExtension.ui.onShowConnectionsInTableButton(Firebug.currentContext)"/>
