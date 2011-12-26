@@ -341,6 +341,12 @@ DojoReps.SubscriptionRep = domplate(FirebugReps.Obj, {
             SPAN({"class": "inline-subscription"}, ")")
         ),
     
+    tagIncomming: SPAN(
+            TAG("$object.context|getRep", {object: "$object.context", className: "object"}),
+            " -> ",
+            TAG(FirebugReps.OBJECTLINK("$title"), {object: "$object|getFunctionObject", className: "object", title: "$object.method|getMethodLabel"})
+        ),
+        
     tag: DIV({},
             //$STR('title.subscriptionRep.onTopic', DOJO_BUNDLE),
             SPAN({"class": "inline-subscription"}, "On Topic: '"),
@@ -352,12 +358,11 @@ DojoReps.SubscriptionRep = domplate(FirebugReps.Obj, {
             SPAN({"class": "inline-subscription"}, ")")
         ),            
 
-      getMethodLabel: getMethodLabel,
-      getFunctionObject: getFunctionObject,
+    getMethodLabel: getMethodLabel,
+    getFunctionObject: getFunctionObject,
     supportsObject: function(object, type) {
         return object['clazz'] == 'Subscription';
     },
-
     getRep: getRep
 });        
 
@@ -714,7 +719,7 @@ OutgoingConnectionsDescriptor.prototype = Obj.extend(DojoModel.FunctionLinkResol
 
 
 //************************************************************************************************
-//This is the rep for the Subscriptions displayed in the main panel
+//This is the rep for the Subscriptions list displayed in the main panel
 DojoReps.SubscriptionsRep = domplate(FirebugReps.Obj,
 {
     inspectable: false,
@@ -727,7 +732,7 @@ DojoReps.SubscriptionsRep = domplate(FirebugReps.Obj,
                     DIV({"class": "collapsable-content"},
                         FOR("sub", "topic.subscriptions",
                             DIV({"class": "dojo-subscription subscription", _referencedObject: "$sub"}, 
-                                TAG(DojoReps.ConnectionRep.tagIncomming, {object: "$sub", className: "subscription"})
+                                TAG(DojoReps.SubscriptionRep.tagIncomming, {object: "$sub", className: "subscription"})
                             )
                         ), "<br/>"
                     )
