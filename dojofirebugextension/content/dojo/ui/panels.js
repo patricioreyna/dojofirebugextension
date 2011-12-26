@@ -559,10 +559,17 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
             this.showConnectionsInTable(context);
         } else if (connsAPI && DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(connsAPI) > 0) {
             this.showSubscriptions(context);
+        } else if (connsAPI && DojoModel.OnAspectObserver.prototype.getGlobalOnAspectObserversCount(connsAPI) > 0) {
+            this.showOnAspectObserversInTable(context);
         } else { //Default
             this.showWidgets(context);
         }
-        //TODO add OnAspects case
+        
+        //show UI of selected side panel
+        var sidePanel = Firebug.chrome.getSelectedSidePanel();
+        if(sidePanel) {
+            sidePanel.refresh();   
+        }
     },
 
     /**
@@ -809,6 +816,9 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
                     Firebug.chrome.selectSidePanel(DojoPanels.SubscriptionsSidePanel.prototype.name);
                 } else if(this._isOnAspectObserver(selection)){
                     Firebug.chrome.selectSidePanel(DojoPanels.OnAspectSidePanel.prototype.name);
+                } else {
+                    //default
+                    Firebug.chrome.selectSidePanel(DojoPanels.DojoInfoSidePanel.prototype.name);
                 }
             }
         }
@@ -1461,7 +1471,7 @@ DojoPanels.DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
 
     initialize: function() {
         Firebug.Panel.initialize.apply(this, arguments);
-        
+
         // Listeners registration for automatic connections and subscriptions counter.
         var ctx = _safeGetContext(this);
         var self = this;
