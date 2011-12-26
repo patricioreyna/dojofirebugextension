@@ -806,7 +806,7 @@ Version.prototype = {
         },
 
         /*int*/compare: function(/*Version*/ anotherVersion, /*bool (optional)*/strict) {
-            if(FBTrace.DBG_DOJO_DBG) {
+            if(FBTrace.DBG_DOJO_DBG_VERSIONS) {
                 FBTrace.sysout("DOJO Version comparison - this version: " + this.toString() + " . anotherVersion: " + anotherVersion.toString());
             }
             return -1 * anotherVersion._compareAgainstVersion(this, strict);
@@ -820,7 +820,7 @@ Version.prototype = {
             } else if(strict && this.patch != anotherVersion.patch) {
                 return this.patch - anotherVersion.patch;
             } else if(strict && this.flag != anotherVersion.flag) {
-                if(FBTrace.DBG_DOJO_DBG) {
+                if(FBTrace.DBG_DOJO_DBG_VERSIONS) {
                     FBTrace.sysout("DOJO this flag: " + this.flag + " . anotherVersion flag: " + anotherVersion.flag);
                 }
                 

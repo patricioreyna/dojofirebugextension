@@ -277,7 +277,7 @@ define([
          trackingInfoDeleted: function(/*Object*/sourceObj) {
              var trackingInfo = this._sourceObjects.get(sourceObj);
              
-             if(FBTrace.DBG_DOJO) {                        
+             if(FBTrace.DBG_DOJO_DBG) {                        
                  FBTrace.sysout("DOJO DEBUG: isEmpty trackingObject: ", [Object.keys(trackingInfo).length == 0, trackingInfo]);
              }
              if(this._isEmpty(trackingInfo)) {
