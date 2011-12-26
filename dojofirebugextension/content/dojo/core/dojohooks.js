@@ -995,7 +995,7 @@ define([
             var self = this;
            var fn = function(ret, args) {               
                
-               //subscribe:function(topic, context, method){...}     
+               //subscribe:function(topic, handlerContext, method){...}     
 
                //FIXME[BugTicket#91]: Defensive code to avoid registering
                if (args[2] && args[2].internalClass == 'dojoext-added-code') {
@@ -1006,10 +1006,20 @@ define([
                }
 
                var topic = Wrapper.unwrapObject(args[0]);
-               var context = Wrapper.unwrapObject(args[1]);
+               var handlerContext = Wrapper.unwrapObject(args[1]);
                var method = Wrapper.unwrapObject(args[2]);                    
 
-               dojoTracker.trackObserver(ret, new DojoModel.Subscription.prototype.createSubscription(topic, context, method, (context.dojoextProxyChain_InfoAboutCaller || null)));
+               // mimic dojo.hitch logic regarding missing (omitted)
+               // context argument
+               if(!method){
+                   method = handlerContext;
+                   handlerContext = null;
+               }              
+               if (!handlerContext) {
+                   handlerContext = (typeof(method) == 'string') ? dojo.global : dojo;
+               }
+
+               dojoTracker.trackObserver(ret, new DojoModel.Subscription.prototype.createSubscription(topic, handlerContext, method, (context.dojoextProxyChain_InfoAboutCaller || null)));
 
                if(FBTrace.DBG_DOJO_DBG) {                        
                    FBTrace.sysout("DOJO DEBUG: _proxySubscribe tracked. ", args);
