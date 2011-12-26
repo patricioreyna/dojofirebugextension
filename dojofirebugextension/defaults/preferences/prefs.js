@@ -14,6 +14,10 @@ pref("extensions.firebug.dojofirebugextension.dojoAnimationsFilter", true);
 //Firebug tracing support
 pref("extensions.firebug.DBG_DOJO", false);
 pref("extensions.firebug.DBG_DOJO_DBG", false);
+pref("extensions.firebug.DBG_DOJO_CONN_COUNTER", false);
+pref("extensions.firebug.DBG_DOJO_DBG_DOC", false);
+pref("extensions.firebug.DBG_DOJO_CONTEXTMENU", false);
+pref("extensions.firebug.DBG_DOJO_DBG_VERSIONS", false);
 
 //Dojo documentation related preferences
 pref("extensions.firebug.dojofirebugextension.documentation.REFERENCE_GUIDE_URL", "http://dojotoolkit.org/reference-guide/");
