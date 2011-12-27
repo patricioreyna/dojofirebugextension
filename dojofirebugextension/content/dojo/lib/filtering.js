@@ -16,8 +16,6 @@ define([
        ], function dojoFilterFactory(FBTrace)
 {
 
-//var DojoFilter = FBL.ns(function() {
-
     var DojoFilter = {};
     
     DojoFilter.filter = function(requestArgs, arrayOfItems, /*Object*/formatters) {        

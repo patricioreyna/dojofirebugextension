@@ -21,7 +21,6 @@ define([
         "firebug/lib/domplate",
         "firebug/lib/events",
         "firebug/lib/lib",
-        "firebug/lib/locale",
         "firebug/lib/object",
         "firebug/lib/trace",
         "dojo/core/dojoaccess",
@@ -29,22 +28,12 @@ define([
         "dojo/core/prefs",
         "dojo/lib/collections",
         "dojo/ui/ui"
-       ], function dojoRepsFactory(FirebugReps, Firebug, Css, Dom, Domplate, Events, FBL, Locale, Obj, FBTrace, DojoAccess, DojoModel, DojoPrefs, Collections, UI)
+       ], function dojoRepsFactory(FirebugReps, Firebug, Css, Dom, Domplate, Events, FBL, Obj, FBTrace, DojoAccess, DojoModel, DojoPrefs, Collections, UI)
 {
 with(Domplate) {
 
 var DojoReps = {};
 
-var DOJO_BUNDLE = UI.DOJO_BUNDLE;
-
-////FIXME XXXpreyna need to use the UI.DOJO_BUNDLE constant. Cannot do it now, because of a circular dependency.
-//var DOJO_BUNDLE = "fbDojo_dojostrings";    
-////Extend string bundle with new strings for this extension.
-////This must be done yet before domplate definitions.
-//if (Firebug.registerStringBundle) {
-//    Firebug.registerStringBundle("chrome://dojofirebugextension/locale/dojo.properties");    
-//}
-    
 //****************************************************************
 // GENERAL FUNCTIONS
 //****************************************************************
@@ -242,7 +231,7 @@ DojoReps.DijitRep = domplate(FirebugReps.Obj,
         
         return [
             "-",
-            {label: Locale.$STRF("InspectInTab", ["HTML"]), nol10n: true, command: Obj.bindFixed(this._inspectHtml, this, widget, context) }
+            {label: UI.$STRF("InspectInTab", ["HTML"]), nol10n: true, command: Obj.bindFixed(this._inspectHtml, this, widget, context) }
         ];
     },
     
@@ -250,7 +239,7 @@ DojoReps.DijitRep = domplate(FirebugReps.Obj,
         var widgetLabel = '[' + this.getWidgetId(widget) + ' (' + this.getWidgetDeclaredClass(widget) + ')]';
         
         if(this.isDetached(widget)) {
-            widgetLabel = Locale.$STR('detached.tooltip', DOJO_BUNDLE) + ": " + widgetLabel;
+            widgetLabel = UI.$STR('detached.tooltip') + ": " + widgetLabel;
         }
         
         return widgetLabel;
@@ -317,7 +306,7 @@ DojoReps.SubscriptionRep = domplate(FirebugReps.Obj, {
         ),
         
     tag: DIV({},
-            //$STR('title.subscriptionRep.onTopic', DOJO_BUNDLE),
+            //$STR('title.subscriptionRep.onTopic'),
             SPAN({"class": "inline-subscription"}, "On Topic: '"),
             SPAN({"class": "inline-topic"}, "$object.topic"),
             SPAN({"class": "inline-subscription"}, "'==>Exec:("),
@@ -385,7 +374,7 @@ DojoReps.OnAspectObserversArrayRep = domplate(FirebugReps.Obj,
               DIV({"class": "collapsable-container container-opened"},
                   DIV({"class": "collapsable-label", onclick: "$onContainerClick"},
                       DIV({"class": "incomingConnections"},
-                          Locale.$STR('title.Listeners', DOJO_BUNDLE),
+                          UI.$STR('title.Listeners'),
                           " ($object.trackingInfo|getTotalCountOfOnAspectObservers)"
                       )
                   ),
@@ -471,9 +460,9 @@ DojoReps.OnAspectObserversTableRep = domplate(
                       TBODY(
                           TR({"class": "connectionsPropertyHeaders"},
                                   //TODO preyna sorted table: enable again!
-                                  TH({/*"class": "$priorityCriteriaArray|objectPriorityOrder", "onclick": "$sorterObject"*/}, Locale.$STR('title.onAspect.Target', DOJO_BUNDLE)),
-                                  TH({/*"class": "$priorityCriteriaArray|eventPriorityOrder", "onclick": "$sorterEvent"*/},Locale.$STR('title.onAspect.Type', DOJO_BUNDLE)),
-                                  TH({/*"class": "$priorityCriteriaArray|methodPriorityOrder", "onclick": "$sorterMethod"*/},Locale.$STR('title.onAspect.Listener', DOJO_BUNDLE))
+                                  TH({/*"class": "$priorityCriteriaArray|objectPriorityOrder", "onclick": "$sorterObject"*/}, UI.$STR('title.onAspect.Target')),
+                                  TH({/*"class": "$priorityCriteriaArray|eventPriorityOrder", "onclick": "$sorterEvent"*/},UI.$STR('title.onAspect.Type')),
+                                  TH({/*"class": "$priorityCriteriaArray|methodPriorityOrder", "onclick": "$sorterMethod"*/},UI.$STR('title.onAspect.Listener'))
                             ),
                           FOR("obs", "$observers",
                               TR({"class": "dojo-onaspectobserver row-$null|changeLineType", _referencedObject: "$obs"},
@@ -545,7 +534,7 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
                 DIV({"class": "collapsable-container container-opened"},
                     DIV({"class": "collapsable-label", onclick: "$onContainerClick"},
                         DIV({"class": "incomingConnections"},
-                            Locale.$STR('title.Listened by', DOJO_BUNDLE),
+                            UI.$STR('title.Listened by'),
                             " ($object.trackingInfo|getTotalCountOfIncommingConnections)"
                         )
                     ),
@@ -573,7 +562,7 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
                 DIV({"class": "collapsable-container container-opened"},
                     DIV({"class": "collapsable-label", onclick: "$onContainerClick"},
                         DIV({"class": "outgoingConnections"}, 
-                            Locale.$STR('title.Listens to', DOJO_BUNDLE),
+                            UI.$STR('title.Listens to'),
                             " ($object.trackingInfo|getTotalCountOfOutgoingConnections)"
                         )
                     ),
@@ -739,15 +728,15 @@ DojoReps.ConnectionsTableRep = domplate(
                 TABLE({"class": "connections-table", "cellpadding": 0, "cellspacing": 0},
                         TBODY(
                             TR({"class": ""},
-                                    TD({"class": "superHeader", "colspan": "2"}, Locale.$STR('title.Source', DOJO_BUNDLE)),
-                                    TD({"class": "superHeader", "colspan": "2"}, Locale.$STR('title.Target', DOJO_BUNDLE))
+                                    TD({"class": "superHeader", "colspan": "2"}, UI.$STR('title.Source')),
+                                    TD({"class": "superHeader", "colspan": "2"}, UI.$STR('title.Target'))
                               ),
                             TR({"class": "connectionsPropertyHeaders"},
                                     //TODO preyna sorted table: enable again!
-                                    TH({/*"class": "$priorityCriteriaArray|objectPriorityOrder", "onclick": "$sorterObject"*/}, Locale.$STR('title.Obj', DOJO_BUNDLE)),
-                                    TH({/*"class": "$priorityCriteriaArray|eventPriorityOrder", "onclick": "$sorterEvent"*/},Locale.$STR('title.Event', DOJO_BUNDLE)),
-                                    TH({/*"class": "$priorityCriteriaArray|contextPriorityOrder", "onclick": "$sorterContext"*/},Locale.$STR('title.Context', DOJO_BUNDLE)),
-                                    TH({/*"class": "$priorityCriteriaArray|methodPriorityOrder", "onclick": "$sorterMethod"*/},Locale.$STR('title.Method', DOJO_BUNDLE))
+                                    TH({/*"class": "$priorityCriteriaArray|objectPriorityOrder", "onclick": "$sorterObject"*/}, UI.$STR('title.Obj')),
+                                    TH({/*"class": "$priorityCriteriaArray|eventPriorityOrder", "onclick": "$sorterEvent"*/},UI.$STR('title.Event')),
+                                    TH({/*"class": "$priorityCriteriaArray|contextPriorityOrder", "onclick": "$sorterContext"*/},UI.$STR('title.Context')),
+                                    TH({/*"class": "$priorityCriteriaArray|methodPriorityOrder", "onclick": "$sorterMethod"*/},UI.$STR('title.Method'))
                               ),
                             FOR("con", "$connections",
                                 TR({"class": "dojo-connection row-$null|changeLineType", _referencedObject: "$con"},
@@ -818,7 +807,7 @@ DojoReps.WidgetListRep = domplate(Firebug.DOMPanel.DirTable,
                                 SPAN({"class": "collapsable-label", onclick: "$onContainerClick"},
                                         TAG(DojoReps.DijitRep.tag, {object: "$widget"})
                                 ),
-                                SPAN({"class": "infoLevelToggle", onclick: "$onSwitchInfoLevelClick", title: Locale.$STR('widget.infoLevelToggle.tooltip', DOJO_BUNDLE)}, "&nbsp;")
+                                SPAN({"class": "infoLevelToggle", onclick: "$onSwitchInfoLevelClick", title: UI.$STR('widget.infoLevelToggle.tooltip')}, "&nbsp;")
                             ),
                         DIV({"class": "collapsable-content", _referencedObject:"$widget"},
                                 DIV({"class": "widget-specific-data not-loaded"}),
@@ -885,7 +874,7 @@ DojoReps.WidgetsTreeRep = domplate({
                                 SPAN({"class": "collapsable-children-label $wrapper|hasChildrenClass", onclick: "$onChildrenContainerClick" },
                                         TAG(DojoReps.DijitRep.tag, {object: "$wrapper.widget"})
                                 )/*, //DEPRECATED
-                                SPAN({"class": "$wrapper|infoLevelToggleClass", onclick: "$onSwitchInfoLevelClick", title: Locale.$STR('widget.infoLevelToggle.tooltip', DOJO_BUNDLE)}, "&nbsp;")
+                                SPAN({"class": "$wrapper|infoLevelToggleClass", onclick: "$onSwitchInfoLevelClick", title: UI.$STR('widget.infoLevelToggle.tooltip')}, "&nbsp;")
                                 */
                             ),
                         DIV({"class": "widget-data widget-data-collapsed collapsable-content", _referencedObject:"$wrapper.widget"},

@@ -7,7 +7,7 @@
 
 
 /**
- * UI helpers - Scrolling, highlight in panels, message boxes.
+ * UI helpers - Scrolling and highlight in panels.
  * @author preyna@ar.ibm.com
  * @author fergom@ar.ibm.com
  */
@@ -27,7 +27,7 @@ define([
 
  // ***************************************************************
     
-    var getSelectionController = function(panel) {
+    var _getSelectionController = function(panel) {
         var browser = Firebug.chrome.getPanelBrowser(panel);
         return browser.docShell.QueryInterface(nsIInterfaceRequestor)
             .getInterface(nsISelectionDisplay)
@@ -38,7 +38,7 @@ define([
      * Scroll search found selection. 
      */
     var scrollSelectionIntoView = UI.scrollSelectionIntoView = function(panel) {
-        var selCon = getSelectionController(panel);
+        var selCon = _getSelectionController(panel);
         selCon.scrollSelectionIntoView(
                 nsISelectionController.SELECTION_NORMAL,
                 nsISelectionController.SELECTION_FOCUS_REGION, true);

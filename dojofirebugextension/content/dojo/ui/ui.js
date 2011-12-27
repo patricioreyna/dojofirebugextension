@@ -14,9 +14,12 @@
 define([
         "firebug/firebug",
         "firebug/js/stackFrame",
-        "firebug/lib/css"
-       ], function dojoUIHelperFactory(Firebug, StackFrame, Css)
+        "firebug/lib/css",
+        "firebug/lib/locale"
+       ], function dojoUIHelperFactory(Firebug, StackFrame, Css, Locale)
 {
+
+    var UI = {};
 
     //the name of our strings bundle
     var DOJO_BUNDLE = "fbDojo_dojostrings";    
@@ -28,10 +31,16 @@ define([
         Firebug.registerStringBundle("chrome://dojofirebugextension/locale/dojo.properties");    
     }
 
-    var UI = {};
-
  // ***************************************************************
- 
+
+    UI.$STR = function(key) {
+        return Locale.$STR(key, DOJO_BUNDLE);    
+    };    
+    
+    UI.$STRF = function(key, args) {
+        return Locale.$STRF(key, args, DOJO_BUNDLE);
+    };
+
     
     var getMethodLabel = UI.getMethodLabel = function(method) {
         
@@ -92,7 +101,6 @@ define([
  // exported classes
  // ***************************************************************    
    
-    UI.DOJO_BUNDLE = DOJO_BUNDLE;
     
     return UI;
 });
