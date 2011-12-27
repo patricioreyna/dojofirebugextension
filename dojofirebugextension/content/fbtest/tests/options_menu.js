@@ -1,4 +1,4 @@
-// FIXME: This constants should be loaded from the dojofirebugextension.js file, not redefined.
+// HACK: This constants should be loaded from the dojofirebugextension.js file, not redefined.
 var CONNECTIONS_BP_OPTION = "connections_bp_option";
 var SUBSCRIPTIONS_BP_OPTION = "subscriptions_bp_option";
 var DOCUMENTATION_OPTION = "documentation_option";
@@ -7,7 +7,6 @@ var WIDGET_OPTION = "widget_option";
 /**
  * Test : options listed on right click over some reps.
  * 
- *  FIXME we cannot test based on labels with i18n !
  */
 function runTest()
 {	
@@ -46,7 +45,7 @@ function runTest()
 				FBTest.compare(2, getCountOfOptionsForType(options, DOCUMENTATION_OPTION), "There should be 2 'Documentation' options for a widget within a connection.");
 				FBTest.compare(1, getCountOfOptionsForType(options, WIDGET_OPTION), "There should be 1 widget options for a widget within a connection.");
 				
-				// FIXME: Get a real widget without connections representation. There should be 2 widgets options.
+				// TODO Get a real widget without connections representation. There should be 2 widgets options.
 				// Check widget without connections
 				options = panel.getContextMenuItems(widgetWithConnectionHtmlNode['referencedObject'], panel.panelNode, context);
 				FBTest.compare(4, options.length, "There should be 4 options for a plain widget."); //we need to count "-" menuitems

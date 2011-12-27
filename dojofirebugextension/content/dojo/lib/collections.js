@@ -26,7 +26,7 @@ define([
    };
    
    /*
-    * FIXME preyna HACK required due to '==' returning false since FF 4
+    * preyna HACK required due to '==' returning false since FF 4
     * (in FF 3.6 we can safely use '==' to compare Objects from different compartments) 
     */
    Collections.areEqual = function(obj1, obj2, usingHashcodes) {
@@ -345,7 +345,7 @@ define([
            
            areEqual: function(obj1, obj2) {
                /*
-                * FIXME xxxpreyna HACK required due to == returning false as of FF 4
+                * xxxpreyna HACK required due to == returning false as of FF 4
                 * (in FF 3.6 we can safely use == to compare Objects) 
                 */
                

@@ -22,7 +22,7 @@ function runTest()
 		    	
 		    	//FIXME: I use the first obj in the list of objects with conns (that should be window), instead of use win
 		    	//because for an unknown reason the connections cannot be obtained using that reference.
-		    	FBTest.sysout("PATRICIO : ESTE PARECE QUE NO VA A FUNCAR");
+		    	FBTest.sysout("preyna: I don't think this will work");
 		    	var dojoGlobal = api.getObjectsWithConnections()[0];
 		    	var objConnHandlerTest = win.objConnHandlerTest;
 		    	var objConnTargetTest = win.objConnTargetTest;

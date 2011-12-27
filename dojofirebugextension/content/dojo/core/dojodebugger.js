@@ -21,9 +21,8 @@ define([
         "firebug/js/stackFrame",        
         "firebug/lib/object",
         "firebug/lib/trace",
-        "dojo/core/dojoaccess",
-        "dojo/lib/filtering"
-       ], function dojoDebuggerFactory(Firebug, FBS, StackFrame, Obj, FBTrace, DojoAccess, DojoFilter)
+        "dojo/core/dojoaccess"
+       ], function dojoDebuggerFactory(Firebug, FBS, StackFrame, Obj, FBTrace, DojoAccess)
 {
 
 const Ci = Components.interfaces;

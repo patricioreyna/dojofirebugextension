@@ -83,8 +83,7 @@ define([
     // ***************************************************************
     
     /**
-      * @class Connection API
-      * FIXME TODO should be renamed to Tracker
+      * @class Tracker
       */
      var Tracker = function(/*boolean*/ useHashCodeBasedDictionary){
          
@@ -93,7 +92,7 @@ define([
          this._handles = (useHashCodeBasedDictionary) ? new Collections.ComposedDictionary() : new Collections.Dictionary();
          //a map holding TrackerInfo by sourceObject. Source object is a normal client app object , and trackingInfo contains the set of associated Observers
          this._sourceObjects = (useHashCodeBasedDictionary) ? new Collections.ComposedDictionary() : new Collections.Dictionary();
-         //a shared space that can be used by specific impls to store values (for example, the array of all connection objects) (FIXME it's a hack)
+         //a shared space that can be used by specific impls to store values (for example, the array of all connection objects) (HACK)
          this.sharedSpace = {};
      };
      
@@ -205,7 +204,7 @@ define([
               */
              getListenerFunction : function() {
                  var fn = null;
-                 //FIXME this is a hack. We are using knowledge from subclasses here
+                 //HACK this is a hack. We are using knowledge from subclasses here
                  if(this.listener && typeof(this.listener) == "function") {
                      fn = this.listener;
                  } else if(this.method && typeof(this.method) == "function") {

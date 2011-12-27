@@ -153,11 +153,3 @@ function verifyEverythingWasCleanedUp(win, panel, api, context, dijit, originalW
 	FBTest.compare(originalWidgets, panel.getWidgets(context).length, "registry should contain same number of widgets as in the beginning");	
 }
 
-//function _toArray(/*WidgetSet*/ registry) {
-//	//FIXME este puede estar metiendo problemas con el == 
-//	var ar = [];
-//	registry.forEach(function(elem) {
-//		ar.push(elem);
-//	});
-//	return ar;
-//}

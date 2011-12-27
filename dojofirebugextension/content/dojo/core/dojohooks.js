@@ -9,7 +9,6 @@
  * @author preyna@ar.ibm.com
  */
 define([
-        "firebug/lib/lib",
         "firebug/lib/object",
         "firebug/lib/trace",
         "firebug/lib/wrapper",
@@ -19,7 +18,7 @@ define([
         "dojo/core/proxies",       
         "dojo/lib/utils"/*,
         "dojo/core/trace-error-log" //must be the last item always */
-       ], function dojoHooksFactory(FBL, Obj, FBTrace, Wrapper, DojoAccess, DojoModel, DojoPrefs, DojoProxies, DojoUtils)
+       ], function dojoHooksFactory(Obj, FBTrace, Wrapper, DojoAccess, DojoModel, DojoPrefs, DojoProxies, DojoUtils)
 {
 
     //FIXME refactor this file into smaller ones
@@ -289,7 +288,8 @@ define([
                     } else {                     
                         //event is string
                         //$$HACK if using dojo 1.7's connect based on 'advices', then we disable Break on Event.
-                        //FIXME or ..we could try finding the oroginal function in the advices chain
+                        //(or ..we could try finding the oroginal function in the advices chain)
+                        //TODO or we could ask dojo guys to make the event "visible" to us.
                         if(obj[event] && obj[event]['target']) {
                             originalFunction = obj[event]['target'];
                         } else {
@@ -486,7 +486,7 @@ define([
 
                 try {
                     //Connect place Note: for dijits using _OnDijitClickMixin (i.e. all of them) we need to return 4 level depth frame 
-                    //as the caller function (TODO: for mobile widgets should be 3)
+                    //as the caller function
                     var mod = widgetBaseModule.prototype;
                     proxyFactory.proxyFunction(context, mod, "connect", this._connectPreviousAdviceWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this._proxyConnectWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth connect place*/4));
                     proxyFactory.proxyFunction(context, mod, "subscribe", this._connectPreviousAdviceWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this._proxySubscribeWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker, /*depth subscribe place*/2));
@@ -520,7 +520,7 @@ define([
               }
 
               //add flag to avoid normal connect proxy to catch this as well.
-              //TODO beware with this code. Is there a potential problem of different connects? (multi-process?)
+              //Watch out this code! Is there a potential problem of different connects? (in the future, with multi-process?)
               context.dojoextComingFromOtherProxy = true;              
           }
       },

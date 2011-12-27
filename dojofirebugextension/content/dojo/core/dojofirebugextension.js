@@ -16,10 +16,8 @@ define([
         "firebug/firefox/firefox",
         "firebug/firefox/menu",
         "firebug/lib/dom",
-        "firebug/lib/locale",
         "firebug/lib/object",
         "firebug/lib/trace",
-        "firebug/lib/wrapper",
         "dojo/core/dojoaccess",
         "dojo/core/dojodebugger",
         "dojo/core/dojomodel",
@@ -28,9 +26,10 @@ define([
         "dojo/core/proxies",  
         "dojo/lib/collections",
         "dojo/lib/utils",
-        "dojo/ui/dojoreps"
-       ], function dojoModuleFactory(Firebug, Firefox, Menu, Dom, Locale, Obj, FBTrace, Wrapper, DojoAccess, DojoDebug, DojoModel, 
-               DojoHooks, DojoPrefs, DojoProxies, Collections, DojoUtils, DojoReps)
+        "dojo/ui/dojoreps",
+        "dojo/ui/ui",
+       ], function dojoModuleFactory(Firebug, Firefox, Menu, Dom, Obj, FBTrace, DojoAccess, DojoDebug, DojoModel, 
+               DojoHooks, DojoPrefs, DojoProxies, Collections, DojoUtils, DojoReps, UI)
 {
 
 // ****************************************************************
@@ -88,7 +87,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     extensionLoaded: false, //if the extension has already registered its stuff.
     
     _getDojoPanel: function(context) {
-        //FIXME invalid . Module shouldn't access the panel directly. This won't work in remote versions
+        //(multi-process) Module shouldn't access the panel directly. This won't work in remote versions
         return context.getPanel("dojofirebugextension");
     },
         
@@ -161,7 +160,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
             }
 
             var contextMenu = Firefox.$("contentAreaContextMenu"); 
-            var itemToCreate = { id: "fbDojo_menu_dojofirebugextension_inspect", label: Locale.$STR("window.contextmenuitem.inspect"), nol10n: true, command: Firebug.DojoExtension.dojofirebugextensionModel.inspectFromContextMenu, hidden: true };
+            var itemToCreate = { id: "fbDojo_menu_dojofirebugextension_inspect", label: UI.$STR("window.contextmenuitem.inspect"), nol10n: true, command: Firebug.DojoExtension.dojofirebugextensionModel.inspectFromContextMenu, hidden: true };
             inspectItem = Menu.createMenuItem(contextMenu, itemToCreate);
         }
 
@@ -184,7 +183,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
 
     /**
      * inspector related method
-     * FIXME should be moved to a UI related class
+     * TODO (multi-process) should be moved to a UI related class
      */
     inspectFromContextMenu: function(event) {
         if(FBTrace.DBG_DOJO_CONTEXTMENU) {
@@ -229,7 +228,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         }
         context.tracker = new DojoModel.Tracker(DojoPrefs._isHashCodeBasedDictionaryImplementationEnabled());        
         
-        // FIXME: HACK to find out if the page need to be reloaded due to data inconsistencies issues.
+        // HACK to find out if the page need to be reloaded due to data inconsistencies issues.
         var dojo = DojoAccess._dojo(context);
         setNeedsReload(context, (dojo && dojo["subscribe"]));
         
@@ -281,7 +280,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
      * invoked whenever the user selects a tab.
      */
     showPanel: function(browser, panel) {
-        //TODO is this code right (to be here)?
+        //(multi-process) is this code right (to be here)?
         
         // this test on name is a sign that this code belongs in panel.show()
         var isdojofirebugextensionPanel = panel && panel.name == "dojofirebugextension";
@@ -368,7 +367,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
    },
    
    enableExtension: function() {
-       //TODO probably will need to fire event and execute this on UI side
+       //(multi-process) probably will need to fire event and execute this on UI side
        if(this.extensionLoaded) {
            return;
        }
@@ -387,7 +386,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
        //FF main context menu 
        this._registerContextMenuListener();
        
-       //FIXME remove this dependency!       
+       //TODO (multi-process) remove this dependency!       
        DojoReps.registerReps();
 
        //last step
@@ -395,7 +394,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
    },
    
    disableExtension: function() {
-       //TODO probably will need to fire event and execute this on UI side
+       //(multi-process) probably will need to fire event and execute this on UI side
        if(!this.extensionLoaded) {
            return;
        }
@@ -404,7 +403,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
            FBTrace.sysout("DOJO - disableExtension");
        }
 
-       //FIXME remove this dependency!
+       //TODO (multi-process) remove this dependency!
        DojoReps.unregisterReps();
 
        //FF main context menu 

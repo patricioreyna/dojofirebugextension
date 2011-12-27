@@ -81,7 +81,7 @@ define([
              }
              
              // remove OnAspect from global list.
-             //FIXME performance
+             //TODO performance
              tracker.sharedSpace._allOnAspectObserversArray.splice(tracker.sharedSpace._allOnAspectObserversArray.indexOf(this), 1);
              
              // Remove incoming connection
@@ -113,7 +113,7 @@ define([
          
          _removeOnAspectObserver: function(trackingInfo) {
              var arr = trackingInfo._onAspectObservers.get(this.type);
-             arr.splice(arr.indexOf(this),1); //FIXME PERFORMANCE
+             arr.splice(arr.indexOf(this),1); //TODO PERFORMANCE
              // Remove event if it has no associated connections.
              if (arr.length == 0) {
                  trackingInfo._onAspectObservers.remove(this.type);

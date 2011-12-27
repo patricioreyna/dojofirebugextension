@@ -1,4 +1,4 @@
-// FIXME: This constant should be loaded from the dojofirebugextension.js file, not redefined.
+// HACK This constant should be loaded from the dojofirebugextension.js file, not redefined.
 var DOCUMENTATION_OPTION = "documentation_option";
 
 // Test entry point.
@@ -38,7 +38,7 @@ function runTest()
 	});
 }
 
-// FIXME: This method is already defined in the options_menu.js. Find how to load a js file with common functionality.
+// TODO: This method is already defined in the options_menu.js. Find how to load a js file with common functionality.
 /**
  * This method is used to count the number of options of a certain type in the options list.
  * @param options the option list

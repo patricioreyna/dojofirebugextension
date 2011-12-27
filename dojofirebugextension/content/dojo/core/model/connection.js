@@ -92,7 +92,7 @@ define([
              }             
              
              //Remove connection from global list.
-             //FIXME performance
+             //TODO performance
              tracker.sharedSpace._allConnectionsArray.splice(tracker.sharedSpace._allConnectionsArray.indexOf(this), 1);
              
              // Remove incoming connection
@@ -150,7 +150,7 @@ define([
          // Remove incoming connection.
          _unregisterIncomingConnection: function(trackingInfo) {
              var arr = trackingInfo._incomingConnections.get(this.event);
-             arr.splice(arr.indexOf(this),1); //FIXME PERFORMANCE
+             arr.splice(arr.indexOf(this),1); //TODO PERFORMANCE
              // Remove event if it has no associated connections.
              if (arr.length == 0) {
                  trackingInfo._incomingConnections.remove(this.event);
@@ -169,7 +169,7 @@ define([
          // Remove outgoing connection.
          _unregisterOutgoingConnection: function(trackingInfo){
              var arr = trackingInfo._outgoingConnections.get(this.method);
-             arr.splice(arr.indexOf(this),1); //FIXME PERFORMANCE
+             arr.splice(arr.indexOf(this),1); //TODO PERFORMANCE
              // Remove method if it has no associated connections.
              if (arr.length == 0) {
                  trackingInfo._outgoingConnections.remove(this.method);

@@ -22,10 +22,6 @@ define([
        ], function connsPanelsFactory(Firebug, Obj, FBTrace, DojoModel, DojoReps, MessageBox, DojoPanels)
 {
 
-    //FIXME sacar UI y otros varios!
-    //FIXME sacar las refs a Locale y usar un metodo de commons
-    
-    
 
 /**
  * @panel Connections Side Panel.

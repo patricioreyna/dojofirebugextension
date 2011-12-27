@@ -491,7 +491,6 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
         }
         
         // 2nd step: Highlight and Scroll the selection in the current view.
-        //FIXME why are we passing in 3 args if the target function receives only 2?
         this.highlightSelection(selection, panelConfig.highlight, panelConfig.scroll);
         
         // 3rd step: draw Side panel view
@@ -820,7 +819,7 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
      */
     /*obj|undefined if not valid*/_createConnectionsFilter: function(context) {
         
-        //FIXME add somekind of validation
+        //TODO add some validation , to avoid broken js
         var count = parseInt(Firebug.chrome.$("fbDojo_dojoConnCountBox").value, 10);
         var fromIndex = parseInt(Firebug.chrome.$("fbDojo_dojoConnFromIndexBox").value, 10);
         var query = Firebug.chrome.$("fbDojo_dojoConnFilterBox").value;
@@ -995,9 +994,7 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
         // Sort the connection array.
         var priorityCriteriaArray = context.priorityCriteriaArray || criterias; 
 
-        //TODO preyna sorted table: enable again!
-//        var cons = context.tracker.getConnections(priorityCriteriaArray);
-        //var cons = context.tracker.getConnections(filteringCriteria, formatters);
+        //TODO sorted table: enable again!
         var cons = DojoModel.Connection.prototype.getGlobalConnections(context.tracker, filteringCriteria, formatters);
         
         var document = this.document;

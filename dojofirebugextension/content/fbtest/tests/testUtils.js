@@ -33,7 +33,7 @@ if(!window.disableDojoPanel) {
 }
 	
 window._toArray = function(/*WidgetSet*/ registry) {
-	//FIXME este puede estar metiendo problemas con el == 
+	//FIXME este puede estar metiendo problemas con el '=='
 	var ar = [];
 	var clientFn = function(elem) {
 		ar.push(elem);

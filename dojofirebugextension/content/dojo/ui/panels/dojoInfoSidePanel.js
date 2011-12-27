@@ -119,10 +119,9 @@ DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
         }
     },
     
-    _getCounterNode: function(counterId){
-        // FIXME: Use $() function. Find out why this.panelNode has no getElementById method. 
+    _getCounterNode: function(counterId){ 
         var counters = this.panelNode.getElementsByClassName(counterId);
-        return (counters.length > 0) ? counters[0] : null;//$('connectionCounterId', this.panelNode);
+        return (counters.length > 0) ? counters[0] : null;
     },
     
     _updateCounter: function(counterNode, number) {

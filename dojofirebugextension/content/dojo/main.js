@@ -33,7 +33,7 @@ var theApp = {
                 FBTrace.sysout("Dojo extension shutdown");
             }
 
-            // TODO: Extension shutdown
+            // Extension shutdown
             DojoExtension.dojofirebugextensionModel.shutdown();
         }
         

@@ -24,8 +24,6 @@ define([
         "dojo/ui/ui"
        ], function dojoPanelsFactory(Firebug, Firefox, Win, Dom, Obj, FBTrace, DojoExtension, DojoModel, DojoPrefs, UI)
 {
-
-    //FIXME limpiar las referencias NO usadas!
     
     var DojoPanels = {};
 
@@ -371,7 +369,7 @@ var DojoPanelMixin =  {
     },
     
     openBrowserWindowWithURL: function(url, context) {
-        //FIXME make this work!
+        //preyna: i don't think this works ...
         var h = context.window.height;
         var w = context.window.width;
         var args = {

@@ -44,7 +44,7 @@ define([
     
     var getMethodLabel = UI.getMethodLabel = function(method) {
         
-        // FIXME: method should not be undefined, but it happens. Alert about this situation.
+        //method should not be undefined, but it happens. Alert about this situation.
         if(!method) {
             return "undefined"; 
         }
@@ -59,7 +59,7 @@ define([
         } else if(method.__dojoExtDisplayNameCache) {
             label = method.__dojoExtDisplayNameCache;
         } else {
-            //xxxPERFORMANCE
+            //TODO PERFORMANCE
             //TODO encapsulate in our debugger file
             var script = Firebug.SourceFile.findScriptForFunctionInContext(Firebug.currentContext, method);            
             try {

@@ -35,7 +35,7 @@ define([
         return Wrapper.unwrapObject(context.window).dojo || null;        
     };
     
-    //FIXME: (idem _dojo) This way of access objects is unsecure. Decouple communication with page and implement a secure mechanism.
+    //FIXME: This way of access objects is unsecure. Decouple communication with page and implement a secure mechanism.
     var _dijit = function(context) {
         //UNSECURE
         if(!context.window) {
@@ -549,7 +549,7 @@ DojoAccess.DojoAccessor.prototype =
                     }
                 }
                 
-                /* FIXME dojo 1.7 widgets don't have _subscribe field anymore (widget's subscriptions are handled 
+                /* dojo 1.7's widgets don't have _subscribe field anymore (widget's subscriptions are handled 
                  * with _connects field as well on that dojo version). */
                 if(widget._subscribes) {
                     var subs = widget._subscribes.map(function(handle) {

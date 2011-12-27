@@ -154,8 +154,6 @@ DojoReps.DijitRep = domplate(FirebugReps.Obj,
         )
     ),
         
-    //TODO for detached css class, try using "$detached: $object|isDetached" .
-    // see: http://www.softwareishard.com/blog/domplate/domplate-examples-part-ii/
     shortTag: FirebugReps.OBJECTLINK(
         SPAN({"class":"dojo-widget dojo-tracked-obj $object|getDetachedClassName $object|getCustomClassName", _referencedObject: "$object"},
             '[',
@@ -197,7 +195,7 @@ DojoReps.DijitRep = domplate(FirebugReps.Obj,
     },
 
     supportsObject: function(object, type) {
-        // FIXME: This validation should be done using the method isWidgetObject defined in the dojoAccess.
+        //FIXME should use the dojoAccessor version of this method.
         return object['declaredClass'] && object['postMixInProperties'];
     },
     
@@ -212,7 +210,7 @@ DojoReps.DijitRep = domplate(FirebugReps.Obj,
     highlightObject: function(widget, context) {
         var domElem = this._getHtmlNode(widget);
         
-        Firebug.Inspector.highlightObject(domElem, context); //FIXME preyna using global
+        Firebug.Inspector.highlightObject(domElem, context);
     },
     
     _getHtmlNode: function(widget) {
@@ -459,7 +457,7 @@ DojoReps.OnAspectObserversTableRep = domplate(
               TABLE({"class": "connections-table", "cellpadding": 0, "cellspacing": 0},
                       TBODY(
                           TR({"class": "connectionsPropertyHeaders"},
-                                  //TODO preyna sorted table: enable again!
+                                  //TODO sorted table: enable again!
                                   TH({/*"class": "$priorityCriteriaArray|objectPriorityOrder", "onclick": "$sorterObject"*/}, UI.$STR('title.onAspect.Target')),
                                   TH({/*"class": "$priorityCriteriaArray|eventPriorityOrder", "onclick": "$sorterEvent"*/},UI.$STR('title.onAspect.Type')),
                                   TH({/*"class": "$priorityCriteriaArray|methodPriorityOrder", "onclick": "$sorterMethod"*/},UI.$STR('title.onAspect.Listener'))
@@ -649,7 +647,6 @@ DojoReps.ConnectionsInfoRep = domplate(FirebugReps.Obj,
 
 /**
  * @class IncomingConnectionsDescriptor
- * TODO check if this class is useful . Check if its a hack
  */
 var IncomingConnectionsDescriptor = DojoReps.IncomingConnectionsDescriptor = function(obj, /*string|function*/event, /*array*/connections){
      this.obj = obj;
@@ -666,7 +663,6 @@ IncomingConnectionsDescriptor.prototype =
 
 /**
  * @class OutgoingConnectionsDescriptor
- * TODO check if this class is useful . Check if its a hack
  */
 var OutgoingConnectionsDescriptor = DojoReps.OutgoingConnectionsDescriptor = function(context, method, /*array*/connections){
      this.context = context;
@@ -732,7 +728,7 @@ DojoReps.ConnectionsTableRep = domplate(
                                     TD({"class": "superHeader", "colspan": "2"}, UI.$STR('title.Target'))
                               ),
                             TR({"class": "connectionsPropertyHeaders"},
-                                    //TODO preyna sorted table: enable again!
+                                    //TODO sorted table: enable again!
                                     TH({/*"class": "$priorityCriteriaArray|objectPriorityOrder", "onclick": "$sorterObject"*/}, UI.$STR('title.Obj')),
                                     TH({/*"class": "$priorityCriteriaArray|eventPriorityOrder", "onclick": "$sorterEvent"*/},UI.$STR('title.Event')),
                                     TH({/*"class": "$priorityCriteriaArray|contextPriorityOrder", "onclick": "$sorterContext"*/},UI.$STR('title.Context')),
@@ -796,7 +792,7 @@ DojoReps.CounterLabel = domplate(FirebugReps.Obj,
 
 
 //************************************************************************************************
-//FIXME preyna : using globals
+
 DojoReps.WidgetListRep = domplate(Firebug.DOMPanel.DirTable,
 {
     // object will be array of dijit widgets
@@ -848,7 +844,7 @@ DojoReps.WidgetListRep = domplate(Firebug.DOMPanel.DirTable,
         var nodes = parentNode.getElementsByClassName(nodeClass);
         var node = (nodes) ? nodes[0] : null;
         if(node && Css.hasClass(node, "not-loaded")){            
-            Firebug.DOMPanel.DirTable.tag.append({object: ((decFunction) ? decFunction(obj) : obj)}, node); //FIXME preyna : using globals
+            Firebug.DOMPanel.DirTable.tag.append({object: ((decFunction) ? decFunction(obj) : obj)}, node);
             Css.removeClass(node, "not-loaded");
         }
     }
@@ -912,7 +908,7 @@ DojoReps.WidgetsTreeRep = domplate({
         return res;
     },
     _contains: function(widget, widgetsArray) {
-        //FIXME $$HACK XXXpreyna
+        //HACK preyna
         if(widget.isFakeRoot) {
             return widgetsArray[0] && widgetsArray[0].isFakeRoot;
         }
@@ -936,11 +932,11 @@ DojoReps.WidgetsTreeRep = domplate({
     
     //DEPRECATED
     infoLevelToggleClass: function(wrapper) {
-        //FIXME do not explicitely use fakeNode
+        //HACK do not explicitely use fakeNode
         return wrapper.widget.isFakeRoot ? "not-displayed" : "infoLevelToggle";
     },
     getChildren: function(widget) {
-        //FIXME do not explicitely use fakeNode
+        //HACK do not explicitely use fakeNode
         if(widget.isFakeRoot) {
             return widget.children;
         }
@@ -987,7 +983,7 @@ DojoReps.WidgetsTreeRep = domplate({
         }        
         var elem = Dom.getAncestorByClass(event.target, "collapsable-container");
         
-        //FIXME do not explicitely use fakeNode
+        //HACK do not explicitely use fakeNode
         if(elem.repWidget.isFakeRoot) {
             //it's the fake root
             return;
@@ -1029,7 +1025,7 @@ DojoReps.WidgetsTreeRep = domplate({
         if(Css.hasClass(node, "widget-data-opened")) {
             var decFunction = this._getDecFunction(elem);
             var objectToDisplay = (Css.hasClass(elem, "widget-info-level-specific") && decFunction) ? decFunction(elem.repWidget) : elem.repWidget;  
-            Firebug.DOMPanel.DirTable.tag.replace({object: objectToDisplay}, node); //FIXME preyna : using globals
+            Firebug.DOMPanel.DirTable.tag.replace({object: objectToDisplay}, node);
         }        
         
     },

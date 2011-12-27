@@ -9,7 +9,7 @@
 //
 // <script type="application/x-javascript" src="chrome://<ext-id>/content/mainOverlay.js"/>
 
-// TODO: Replace with your <ext-id>
+// <ext-id>
 var extensionName = "dojofirebugextension"; 
 
 var fbDojo_debugLogEnabled = false;
