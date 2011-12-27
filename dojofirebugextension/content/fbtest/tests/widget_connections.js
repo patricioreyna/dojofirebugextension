@@ -33,7 +33,7 @@ function verifyWidgetConnections(testPageUrl, expectedIncomming, expectedOutgoin
 				var panel = FW.Firebug.chrome.selectPanel("dojofirebugextension"); //get our panel
 				var context = FW.Firebug.currentContext; //context!
 				
-				var api = context.connectionsAPI;
+				var api = context.tracker;
 				var conns = FBTest.DojoExtension.DojoModel.Connection.prototype.getGlobalConnections(api);
 				var dijit = win.dijit;
 				

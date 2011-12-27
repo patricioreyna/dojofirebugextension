@@ -26,8 +26,8 @@ define([
    };
    
    /*
-    * FIXME xxxpreyna HACK required due to == returning false as of FF 4
-    * (in FF 3.6 we can safely use == to compare Objects) 
+    * FIXME preyna HACK required due to '==' returning false since FF 4
+    * (in FF 3.6 we can safely use '==' to compare Objects from different compartments) 
     */
    Collections.areEqual = function(obj1, obj2, usingHashcodes) {
        if(!usingHashcodes || (_isEnumerable(obj1) || _isEnumerable(obj2))) {

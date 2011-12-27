@@ -28,7 +28,7 @@ function runTest() {
 				var context = FW.Firebug.currentContext; //context!
                 var dijit = win.dijit;
                 
-                var api = context.connectionsAPI;    
+                var api = context.tracker;    
                 var DojoModel = FBTest.DojoExtension.DojoModel;
                 var originalConnections = DojoModel.Connection.prototype.getGlobalConnectionsCount(api);
                 var originalSubscriptions = DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(api);
@@ -68,7 +68,7 @@ function runTest() {
 		    } catch (err) {
 		        FBTest.exception("Test: ", err);
 		    } finally {
-		    	//FW.Firebug.currentContext.connectionsAPI.destroy();
+		    	//FW.Firebug.currentContext.tracker.destroy();
 		        FBTest.testDone();
 		    }
 	    });

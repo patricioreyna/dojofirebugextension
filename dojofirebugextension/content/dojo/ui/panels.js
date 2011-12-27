@@ -29,7 +29,9 @@ define([
         "dojo/core/dojomodel",
         "dojo/core/prefs",
         "dojo/lib/collections",
-        "dojo/ui/dojoreps",      
+        "dojo/ui/dojoreps",
+        "dojo/ui/ui",
+        "dojo/ui/messageBox",
         "dojo/ui/uihelpers"
        ], function dojoPanelsFactory(Firebug, Firefox, Win, Xpcom, Css, Dom, Json, Locale, Obj, Search, Str, FBTrace, DojoAccess, DojoExtension, DojoModel, DojoPrefs, Collections, DojoReps, UI)
 {
@@ -205,13 +207,13 @@ var DojoPanelMixin =  {
         //info about listener fn..
         var fnListener = conn.getListenerFunction();
         //var fnListenerLabel = (typeof(conn.method) == "string") ? conn.method : null;
-        var fnListenerLabel = DojoReps.getMethodLabel(conn.method);
+        var fnListenerLabel = UI.getMethodLabel(conn.method);
         var listener = dojoDebugger.getDebugInfoAboutFunction(context, fnListener, fnListenerLabel);
 
         //info about original fn..
         var fnModel = conn.getEventFunction();        
         var fnEventLabel = (typeof(conn.event) == "string") ? conn.event : null;
-        //var fnEventLabel = DojoReps.getMethodLabel(conn.event);
+        //var fnEventLabel = UI.getMethodLabel(conn.event);
         var model = dojoDebugger.getDebugInfoAboutFunction(context, fnModel, fnEventLabel);
         
         if(FBTrace.DBG_DOJO_CONTEXTMENU) {
@@ -302,13 +304,13 @@ var DojoPanelMixin =  {
 
         //info about listener fn..
         var fnListener = observer.getListenerFunction();
-        var fnListenerLabel = DojoReps.getMethodLabel(fnListener);
+        var fnListenerLabel = UI.getMethodLabel(fnListener);
         var listener = dojoDebugger.getDebugInfoAboutFunction(context, fnListener, fnListenerLabel);
 
         //info about original fn..
         var fnModel = observer.getEventFunction();
         var fnEventLabel = (typeof(observer.type) == "string") ? observer.type : null;
-        //var fnEventLabel = DojoReps.getMethodLabel(observer.type);        
+        //var fnEventLabel = UI.getMethodLabel(observer.type);        
         var model = dojoDebugger.getDebugInfoAboutFunction(context, fnModel, fnEventLabel);
         
         if(FBTrace.DBG_DOJO_CONTEXTMENU) {
@@ -336,17 +338,17 @@ var DojoPanelMixin =  {
     },
     
     /*boolean*/_hasConnections: function(widget) {
-        var api = _safeGetContext(this).connectionsAPI;
+        var api = _safeGetContext(this).tracker;
         return (!api) ? false : DojoModel.Connection.prototype.areThereAnyConnectionsFor(api, widget);
     },
     
     /*boolean*/_hasSubscriptions: function(widget) {
-        var api = _safeGetContext(this).connectionsAPI;        
+        var api = _safeGetContext(this).tracker;        
         return (!api) ? false : DojoModel.Subscription.prototype.areThereAnySubscriptionFor(api, widget);
     },
     
     /*boolean*/_hasOnAspectObservers: function(widget) {
-        var api = _safeGetContext(this).connectionsAPI;
+        var api = _safeGetContext(this).tracker;
         return (!api) ? false : DojoModel.OnAspectObserver.prototype.areThereAnyOnAspectsFor(api, widget);
     },
         
@@ -453,8 +455,8 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
                                                             });
         
         var showConnectionsMessageBox = function() { conMsgBox.showMessageBox(); };
-        ctx.connectionsAPI.addListener(DojoModel.ConnectionsAPI.ON_CONNECTION_ADDED, showConnectionsMessageBox);
-        ctx.connectionsAPI.addListener(DojoModel.ConnectionsAPI.ON_CONNECTION_REMOVED, showConnectionsMessageBox);
+        ctx.tracker.addListener(DojoModel.Tracker.ON_CONNECTION_ADDED, showConnectionsMessageBox);
+        ctx.tracker.addListener(DojoModel.Tracker.ON_CONNECTION_REMOVED, showConnectionsMessageBox);
         
         /* Message box for subscriptions */
         var subMsgBox = this.subscriptionsMessageBox = new UI.ActionMessageBox("subscriptionsMsgBox", this.panelNode, 
@@ -465,8 +467,8 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
                     self.showSubscriptions(ctx);
                 });
         var showSubscriptionsMessageBox = function() { subMsgBox.showMessageBox(); };
-        ctx.connectionsAPI.addListener(DojoModel.ConnectionsAPI.ON_SUBSCRIPTION_ADDED, showSubscriptionsMessageBox);
-        ctx.connectionsAPI.addListener(DojoModel.ConnectionsAPI.ON_SUBSCRIPTION_REMOVED, showSubscriptionsMessageBox);
+        ctx.tracker.addListener(DojoModel.Tracker.ON_SUBSCRIPTION_ADDED, showSubscriptionsMessageBox);
+        ctx.tracker.addListener(DojoModel.Tracker.ON_SUBSCRIPTION_REMOVED, showSubscriptionsMessageBox);
 
         /* Message box for on/aspects */
         var onAspectsMsgBox = this.onAspectObserversMessageBox = new UI.ActionMessageBox("onAspectObserversMsgBox", this.panelNode, 
@@ -478,8 +480,8 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
                                                             });
         
         var showOnAspectObserversMessageBox = function() { onAspectsMsgBox.showMessageBox(); };
-        ctx.connectionsAPI.addListener(DojoModel.ConnectionsAPI.ON_ONASPECTOBSERVER_ADDED, showOnAspectObserversMessageBox);
-        ctx.connectionsAPI.addListener(DojoModel.ConnectionsAPI.ON_ONASPECTOBSERVER_REMOVED, showOnAspectObserversMessageBox);
+        ctx.tracker.addListener(DojoModel.Tracker.ON_ONASPECTOBSERVER_ADDED, showOnAspectObserversMessageBox);
+        ctx.tracker.addListener(DojoModel.Tracker.ON_ONASPECTOBSERVER_REMOVED, showOnAspectObserversMessageBox);
 
     },
     
@@ -551,7 +553,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
      */
     showInitialView: function(context) {
         var hasWidgets = this.hasWidgets(context);
-        var connsAPI = context.connectionsAPI;
+        var connsAPI = context.tracker;
         
         if (hasWidgets) {
             this.showWidgets(context);            
@@ -1061,8 +1063,8 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
 
         var areThereAnyWidgets = widgets.length > 0; 
         if(!areThereAnyWidgets) {
-            DojoReps.Messages.infoTag.append({object: Locale.$STR('warning.nowidgets.msg1', DOJO_BUNDLE)}, this.panelNode);
-            DojoReps.Messages.simpleTag.append({object: Locale.$STR("warning.nowidgets.msg2", DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.infoTag.append({object: Locale.$STR('warning.nowidgets.msg1', DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.simpleTag.append({object: Locale.$STR("warning.nowidgets.msg2", DOJO_BUNDLE)}, this.panelNode);
             return areThereAnyWidgets;
         }
         
@@ -1204,7 +1206,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
         };
         formatters['method'] = { format: function(method) 
                 {
-                    return DojoReps.getMethodLabel(method);
+                    return UI.getMethodLabel(method);
                 }
         };        
         
@@ -1227,11 +1229,11 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
     _renderOnAspectObserversInTable: function(context) {
         this._setOption(SHOW_ONASPECTS_TABLE, context);
 
-        if(!context.connectionsAPI) {
+        if(!context.tracker) {
             return;
         }
                                 
-        var observers = DojoModel.OnAspectObserver.prototype.getGlobalOnAspectObservers(context.connectionsAPI);
+        var observers = DojoModel.OnAspectObserver.prototype.getGlobalOnAspectObservers(context.tracker);
         
         var document = this.document;
         
@@ -1267,7 +1269,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
             DojoReps.OnAspectObserversTableRep.tag.append({'observers': observers}, this.panelNode);
             
         } else {
-            DojoReps.Messages.infoTag.append({object: Locale.$STR('warning.noOnAspectsRegistered', DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.infoTag.append({object: Locale.$STR('warning.noOnAspectsRegistered', DOJO_BUNDLE)}, this.panelNode);
         }
         
     },
@@ -1280,7 +1282,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
     _renderConnectionsInTable: function(context) {
         this._setOption(SHOW_CONNECTIONS_TABLE, context);
 
-        if(!context.connectionsAPI) {
+        if(!context.tracker) {
             return;
         }
         
@@ -1305,9 +1307,9 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
         var priorityCriteriaArray = context.priorityCriteriaArray || criterias; 
 
         //TODO preyna sorted table: enable again!
-//        var cons = context.connectionsAPI.getConnections(priorityCriteriaArray);
-        //var cons = context.connectionsAPI.getConnections(filteringCriteria, formatters);
-        var cons = DojoModel.Connection.prototype.getGlobalConnections(context.connectionsAPI, filteringCriteria, formatters);
+//        var cons = context.tracker.getConnections(priorityCriteriaArray);
+        //var cons = context.tracker.getConnections(filteringCriteria, formatters);
+        var cons = DojoModel.Connection.prototype.getGlobalConnections(context.tracker, filteringCriteria, formatters);
         
         var document = this.document;
         
@@ -1363,7 +1365,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
                                                                                               DojoModel.ConnectionArraySorter.EVENT])}, this.panelNode);
             
         } else {
-            DojoReps.Messages.infoTag.append({object: Locale.$STR('warning.noConnectionsRegistered', DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.infoTag.append({object: Locale.$STR('warning.noConnectionsRegistered', DOJO_BUNDLE)}, this.panelNode);
         }
         
     },
@@ -1384,7 +1386,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
     _renderSubscriptions: function(context) {
         this._setOption(SHOW_SUBSCRIPTIONS, context);
         
-        if(!context.connectionsAPI) {
+        if(!context.tracker) {
             return;
         }
 
@@ -1394,7 +1396,7 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
         this.subscriptionsMessageBox.loadMessageBox(false);
         
         // There are connections registered
-        var len = DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(context.connectionsAPI); 
+        var len = DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(context.tracker); 
         if (len > 0) {
             
             var maxSuggestedSubs = DojoPrefs.getMaxSuggestedSubscriptions(); 
@@ -1412,12 +1414,12 @@ DojoPanels.dojofirebugextensionPanel.prototype = Obj.extend(ActivablePanelPlusMi
             
             } else {
                 context.dojo.showSubscriptionsAnyway = undefined;
-                var subs = DojoModel.Subscription.prototype.getGlobalSubscriptions(context.connectionsAPI);
+                var subs = DojoModel.Subscription.prototype.getGlobalSubscriptions(context.tracker);
                 DojoReps.SubscriptionsRep.tag.append({object: subs}, this.panelNode);
             }
 
         } else {
-            DojoReps.Messages.infoTag.append({object: Locale.$STR('warning.noSubscriptionsRegistered', DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.infoTag.append({object: Locale.$STR('warning.noSubscriptionsRegistered', DOJO_BUNDLE)}, this.panelNode);
         }
     },
     
@@ -1475,19 +1477,19 @@ DojoPanels.DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
         // Listeners registration for automatic connections and subscriptions counter.
         var ctx = _safeGetContext(this);
         var self = this;
-        var eventsRegistrator = new DojoModel.EventsRegistrator(ctx.connectionsAPI);
+        var eventsRegistrator = new DojoModel.EventListenerRegistrator(ctx.tracker);
         var connectionsCounterGetter = function() {
-            if(!ctx.connectionsAPI) { return; } 
-            self._updateCounter(this.connectionCounterNode, DojoModel.Connection.prototype.getGlobalConnectionsCount(ctx.connectionsAPI));
+            if(!ctx.tracker) { return; } 
+            self._updateCounter(this.connectionCounterNode, DojoModel.Connection.prototype.getGlobalConnectionsCount(ctx.tracker));
         };
         var subscriptionsCounterGetter = function() {
-            if(!ctx.connectionsAPI) { return; }
-            self._updateCounter(this.subscriptionCounterNode, DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(ctx.connectionsAPI));            
+            if(!ctx.tracker) { return; }
+            self._updateCounter(this.subscriptionCounterNode, DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(ctx.tracker));            
         };
         //dojo 1.7+ only
         var onAspectCounterGetter = function() {
-            if(!ctx.connectionsAPI) { return; } 
-            self._updateCounter(this.onAspectCounterNode, DojoModel.OnAspectObserver.prototype.getGlobalOnAspectObserversCount(ctx.connectionsAPI));
+            if(!ctx.tracker) { return; } 
+            self._updateCounter(this.onAspectCounterNode, DojoModel.OnAspectObserver.prototype.getGlobalOnAspectObserversCount(ctx.tracker));
         };        
         var widgetsCounterGetter = function() { 
             if(!DojoAccess.isInitialized(ctx)) { return; }
@@ -1496,14 +1498,14 @@ DojoPanels.DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
 
         //registers the listeners into model...
         eventsRegistrator.registerListenerForEvent(
-                [DojoModel.ConnectionsAPI.ON_CONNECTION_ADDED, DojoModel.ConnectionsAPI.ON_CONNECTION_REMOVED], connectionsCounterGetter);
+                [DojoModel.Tracker.ON_CONNECTION_ADDED, DojoModel.Tracker.ON_CONNECTION_REMOVED], connectionsCounterGetter);
         eventsRegistrator.registerListenerForEvent(
-                [DojoModel.ConnectionsAPI.ON_SUBSCRIPTION_ADDED, DojoModel.ConnectionsAPI.ON_SUBSCRIPTION_REMOVED], subscriptionsCounterGetter);
+                [DojoModel.Tracker.ON_SUBSCRIPTION_ADDED, DojoModel.Tracker.ON_SUBSCRIPTION_REMOVED], subscriptionsCounterGetter);
         eventsRegistrator.registerListenerForEvent(
-                [DojoModel.ConnectionsAPI.ON_CONNECTION_ADDED, DojoModel.ConnectionsAPI.ON_CONNECTION_REMOVED], widgetsCounterGetter);
+                [DojoModel.Tracker.ON_CONNECTION_ADDED, DojoModel.Tracker.ON_CONNECTION_REMOVED], widgetsCounterGetter);
         //dojo 1.7+ only
         eventsRegistrator.registerListenerForEvent(
-                [DojoModel.ConnectionsAPI.ON_ONASPECTOBSERVER_ADDED, DojoModel.ConnectionsAPI.ON_ONASPECTOBSERVER_REMOVED], onAspectCounterGetter);
+                [DojoModel.Tracker.ON_ONASPECTOBSERVER_ADDED, DojoModel.Tracker.ON_ONASPECTOBSERVER_REMOVED], onAspectCounterGetter);
 
         
         ctx.infoPanelCoutersRefreshEventsReg = eventsRegistrator;
@@ -1578,21 +1580,21 @@ DojoPanels.DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
         }
 
         //Global connections count
-        var globalConnectionsCount = (context.connectionsAPI) ? DojoModel.Connection.prototype.getGlobalConnectionsCount(context.connectionsAPI) : 0;       
+        var globalConnectionsCount = (context.tracker) ? DojoModel.Connection.prototype.getGlobalConnectionsCount(context.tracker) : 0;       
         DojoReps.CounterLabel.tag.append({label: Locale.$STR('conn.count.title', DOJO_BUNDLE),
                                           object: globalConnectionsCount, 
                                           counterLabelClass:"countOfConnectionLabel",
                                           counterValueId: this._connectionCounterId}, this.panelNode);
         
         //Global subscriptions count
-        var globalSubscriptionsCount = (context.connectionsAPI) ? DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(context.connectionsAPI) : 0;        
+        var globalSubscriptionsCount = (context.tracker) ? DojoModel.Subscription.prototype.getGlobalSubscriptionsCount(context.tracker) : 0;        
         DojoReps.CounterLabel.tag.append({label: Locale.$STR('subs.count.title', DOJO_BUNDLE),
                                           object: globalSubscriptionsCount, 
                                           counterLabelClass:"countOfSubscriptionLabel",
                                           counterValueId: this._subscriptionCounterId}, this.panelNode);
        
         //Global OnAspectObserver count
-        var globalOnAspectObserverCount = (context.connectionsAPI) ? DojoModel.OnAspectObserver.prototype.getGlobalOnAspectObserversCount(context.connectionsAPI) : 0;
+        var globalOnAspectObserverCount = (context.tracker) ? DojoModel.OnAspectObserver.prototype.getGlobalOnAspectObserversCount(context.tracker) : 0;
         DojoReps.CounterLabel.tag.append({label: Locale.$STR('OnAspectObserver.count.title', DOJO_BUNDLE),
                                           object: globalOnAspectObserverCount, 
                                           counterLabelClass:"countOfOnAspectObserverLabel",
@@ -1661,7 +1663,7 @@ DojoPanels.ConnectionsSidePanel.prototype = Obj.extend(SimplePanelPlusMixin,
      * Zero means not supported, and higher numbers indicate specificity.
      */
     supportsObject: function(object, type) {
-        var api = _safeGetContext(this).connectionsAPI;
+        var api = _safeGetContext(this).tracker;
         return (api && DojoModel.Connection.prototype.areThereAnyConnectionsFor(api, object)) ? 2001 : 0;
     },
 
@@ -1669,13 +1671,13 @@ DojoPanels.ConnectionsSidePanel.prototype = Obj.extend(SimplePanelPlusMixin,
      * triggered when there is a Firebug.chrome.select() that points to the parent panel.
      */
     updateSelection: function(object) {
-        var api = _safeGetContext(this).connectionsAPI;
+        var api = _safeGetContext(this).tracker;
         var trackingInfo = (api) ? api.getTrackingInfoFor(object, true) : null;       
         
         if(trackingInfo && !DojoModel.Connection.prototype.isEmpty(trackingInfo)) {
             DojoReps.ConnectionsInfoRep.tag.replace({ 'object': { 'object': object, 'trackingInfo': trackingInfo }}, this.panelNode);
         } else {
-            DojoReps.Messages.infoTag.replace({'object': Locale.$STR('warning.noConnectionsInfoForTheObject', DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.infoTag.replace({'object': Locale.$STR('warning.noConnectionsInfoForTheObject', DOJO_BUNDLE)}, this.panelNode);
         }
     }
     
@@ -1707,7 +1709,7 @@ DojoPanels.SubscriptionsSidePanel.prototype = Obj.extend(SimplePanelPlusMixin,
      * Zero means not supported, and higher numbers indicate specificity.
      */
     supportsObject: function(object, type) {
-        var api = _safeGetContext(this).connectionsAPI;
+        var api = _safeGetContext(this).tracker;
         return (api && DojoModel.Subscription.prototype.areThereAnySubscriptionFor(api, object)) ? 2000 : 0;
     },
     
@@ -1715,13 +1717,13 @@ DojoPanels.SubscriptionsSidePanel.prototype = Obj.extend(SimplePanelPlusMixin,
      * triggered when there is a Firebug.chrome.select() that points to the parent panel.
      */
     updateSelection: function(object) {
-        var api = _safeGetContext(this).connectionsAPI;
+        var api = _safeGetContext(this).tracker;
         var trackingInfo = (api) ? api.getTrackingInfoFor(object, true) : null;
         
         if(trackingInfo && !DojoModel.Subscription.prototype.isEmpty(trackingInfo)) {
             DojoReps.SubscriptionsArrayRep.tag.replace({ 'object': { 'object': object, 'trackingInfo': trackingInfo }}, this.panelNode);
         } else {
-            DojoReps.Messages.infoTag.replace({object: Locale.$STR('warning.noSubscriptionsInfoForTheObject', DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.infoTag.replace({object: Locale.$STR('warning.noSubscriptionsInfoForTheObject', DOJO_BUNDLE)}, this.panelNode);
         }
     }
 
@@ -1755,7 +1757,7 @@ DojoPanels.OnAspectSidePanel.prototype = Obj.extend(SimplePanelPlusMixin,
      * Zero means not supported, and higher numbers indicate specificity.
      */
     supportsObject: function(object, type) {
-        var api = _safeGetContext(this).connectionsAPI;
+        var api = _safeGetContext(this).tracker;
         return (api && DojoModel.OnAspectObserver.prototype.areThereAnyOnAspectsFor(api, object)) ? 2001 : 0;
     },
 
@@ -1763,13 +1765,13 @@ DojoPanels.OnAspectSidePanel.prototype = Obj.extend(SimplePanelPlusMixin,
      * triggered when there is a Firebug.chrome.select() that points to the parent panel.
      */
     updateSelection: function(object) {        
-        var api = _safeGetContext(this).connectionsAPI;
+        var api = _safeGetContext(this).tracker;
         var trackingInfo = (api) ? api.getTrackingInfoFor(object, true) : null;       
         
         if(trackingInfo && !DojoModel.OnAspectObserver.prototype.isEmpty(trackingInfo)) {
             DojoReps.OnAspectObserversArrayRep.tag.replace({ 'object': { 'object': object, 'trackingInfo': trackingInfo }}, this.panelNode);
         } else {
-            DojoReps.Messages.infoTag.replace({'object': Locale.$STR('warning.noOnAspectsInfoForTheObject', DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.infoTag.replace({'object': Locale.$STR('warning.noOnAspectsInfoForTheObject', DOJO_BUNDLE)}, this.panelNode);
         }
     }
     
@@ -1812,7 +1814,7 @@ DojoPanels.WidgetPropertiesSidePanel.prototype = Obj.extend(SimplePanelPlusMixin
             var objectToDisplay = dojoAccessor.getSpecificWidgetProperties(widget, context);
             Firebug.DOMPanel.DirTable.tag.replace( { object: objectToDisplay }, this.panelNode);
         } else {
-            DojoReps.Messages.infoTag.replace({object: Locale.$STR('warning.objectIsNotAWidget', DOJO_BUNDLE)}, this.panelNode);
+            UI.Messages.infoTag.replace({object: Locale.$STR('warning.objectIsNotAWidget', DOJO_BUNDLE)}, this.panelNode);
         }
     }
 
@@ -1880,7 +1882,7 @@ DojoPanels.DojoHTMLPanel.prototype = Obj.extend(Firebug.HTMLPanel.prototype,
                 this.select(object.domNode);
             } else {
                 if (!object.nodeType){
-                    DojoReps.Messages.infoTag.replace({object: Locale.$STR('warning.noHTMLInfoForTheObject', DOJO_BUNDLE)}, this.panelNode);
+                    UI.Messages.infoTag.replace({object: Locale.$STR('warning.noHTMLInfoForTheObject', DOJO_BUNDLE)}, this.panelNode);
                 }
                 return Firebug.HTMLPanel.prototype.updateSelection.apply(this, arguments);
             }

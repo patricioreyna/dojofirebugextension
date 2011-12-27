@@ -19,7 +19,7 @@ function runTest()
 			var context = FW.Firebug.currentContext; //context!
 			
 			try {
-		    	var api = context.connectionsAPI;
+		    	var api = context.tracker;
 
 		    	// Original subscriptions
 		    	FBTest.compareHash(2, DojoModel.Subscription.prototype.getGlobalSubscriptionsForTopic(api, 'TOPIC 1').length, "Number of subscriptions for topic 'TOPIC 1' should be 2");

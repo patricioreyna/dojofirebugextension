@@ -16,7 +16,6 @@
 define([
         "firebug/chrome/reps",
         "firebug/firebug",
-        "firebug/js/stackFrame",
         "firebug/lib/css",
         "firebug/lib/dom",
         "firebug/lib/domplate",
@@ -29,19 +28,22 @@ define([
         "dojo/core/dojomodel",
         "dojo/core/prefs",
         "dojo/lib/collections",
-       ], function dojoRepsFactory(FirebugReps, Firebug, StackFrame, Css, Dom, Domplate, Events, FBL, Locale, Obj, FBTrace, DojoAccess, DojoModel, DojoPrefs, Collections)
+        "dojo/ui/ui"
+       ], function dojoRepsFactory(FirebugReps, Firebug, Css, Dom, Domplate, Events, FBL, Locale, Obj, FBTrace, DojoAccess, DojoModel, DojoPrefs, Collections, UI)
 {
 with(Domplate) {
 
 var DojoReps = {};
 
-//FIXME XXXpreyna need to use the UI.DOJO_BUNDLE constant. Cannot do it now, because of a circular dependency.
-var DOJO_BUNDLE = "fbDojo_dojostrings";    
-//Extend string bundle with new strings for this extension.
-//This must be done yet before domplate definitions.
-if (Firebug.registerStringBundle) {
-    Firebug.registerStringBundle("chrome://dojofirebugextension/locale/dojo.properties");    
-}
+var DOJO_BUNDLE = UI.DOJO_BUNDLE;
+
+////FIXME XXXpreyna need to use the UI.DOJO_BUNDLE constant. Cannot do it now, because of a circular dependency.
+//var DOJO_BUNDLE = "fbDojo_dojostrings";    
+////Extend string bundle with new strings for this extension.
+////This must be done yet before domplate definitions.
+//if (Firebug.registerStringBundle) {
+//    Firebug.registerStringBundle("chrome://dojofirebugextension/locale/dojo.properties");    
+//}
     
 //****************************************************************
 // GENERAL FUNCTIONS
@@ -54,43 +56,10 @@ var getRep = function(value) {
         return tag;
     };
 
-var getMethodLabel = DojoReps.getMethodLabel = function(method) {
-    
-    // FIXME: method should not be undefined, but it happens. Alert about this situation.
-    if(!method) {
-        return "undefined"; 
-    }
+var getMethodLabel = UI.getMethodLabel;
 
-    var label = '';
-    if (typeof(method) == "string") {
-        //it's an event string most likely. Return it directly , without adding the ending '()'
-        return method;
-        //label = method;
-    } else if(method.displayName) {
-        label = method.displayName;
-    } else if(method.__dojoExtDisplayNameCache) {
-        label = method.__dojoExtDisplayNameCache;
-    } else {
-        //xxxPERFORMANCE
-        //TODO encapsulate in our debugger file
-        var script = Firebug.SourceFile.findScriptForFunctionInContext(Firebug.currentContext, method);            
-        try {
-            label = script ? StackFrame.getFunctionName(script, Firebug.currentContext) : method.name;
-        } catch(exc) {
-            //$$HACK
-            label = method.name;
-        }
-        if(label) {
-            label = label + ((label.indexOf(')') != -1) ? "" : "()");   
-        }
-        method.__dojoExtDisplayNameCache = label;
-    }
-    return label;
-};
-    
-
-var getFunctionObject = function(conn) {
-    return conn.getListenerFunction();
+var getFunctionObject = function(observer) {
+    return observer.getListenerFunction();
 };
 
 var onContainerClick = function(event){
@@ -715,7 +684,7 @@ var OutgoingConnectionsDescriptor = DojoReps.OutgoingConnectionsDescriptor = fun
      this.method = method;
      this.connections = connections; //array
 };
-OutgoingConnectionsDescriptor.prototype = Obj.extend(DojoModel.FunctionLinkResolver.prototype, {});
+OutgoingConnectionsDescriptor.prototype = Obj.extend(DojoModel.AbstractObserver.prototype, {});
 
 
 //************************************************************************************************
@@ -836,25 +805,6 @@ DojoReps.CounterLabel = domplate(FirebugReps.Obj,
                     )
         });
 
-//************************************************************************************************
-DojoReps.Messages = domplate({
-    infoTag: DIV({"class": "infoMessage"}, "$object"),
-    simpleTag: DIV({"class": "simpleMessage"}, "$object")
-});
-
-//************************************************************************************************
-DojoReps.ActionMessageBox = domplate({
-    tag: 
-        DIV({"class": "dojo-warning", "id": "$actionMessageBoxId", "style": "display: $visibility"},
-            IMG({"src": 'chrome://dojofirebugextension/skin/info.png'}),
-            "$message",
-            INPUT({"type": "button", "value": "$btnName", "onclick": "$runAction", _actionMessageBox: "$actionMessageBox"})
-        ),
-    runAction: function(event){
-        var actionMessageBox = event.target['actionMessageBox'];
-        actionMessageBox.executeAction();
-    }
-});
 
 //************************************************************************************************
 //FIXME preyna : using globals

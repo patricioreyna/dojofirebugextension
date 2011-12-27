@@ -142,6 +142,7 @@ define([
                           ". Please report the bug.";
                 if(FBTrace.DBG_DOJO) {
                     FBTrace.sysout("DOJO ERROR: " + msg + ". Arguments: ", arguments);
+                    FBTrace.sysout("DOJO ERROR: obj[functionToProxy]: ", obj[functionToProxy]);                    
                 }
 
             }

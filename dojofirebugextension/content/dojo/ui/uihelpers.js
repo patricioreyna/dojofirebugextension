@@ -7,7 +7,7 @@
 
 
 /**
- * UI helpers
+ * UI helpers - Scrolling, highlight in panels, message boxes.
  * @author preyna@ar.ibm.com
  * @author fergom@ar.ibm.com
  */
@@ -15,8 +15,8 @@ define([
         "firebug/firebug",
         "firebug/lib/css",
         "firebug/lib/dom",
-        "dojo/ui/dojoreps"
-       ], function dojoUIHelperFactory(Firebug, Css, Dom, DojoReps)
+        "dojo/ui/ui"
+       ], function dojoUIHelperFactory(Firebug, Css, Dom, UI)
 {
 
     const Ci = Components.interfaces;
@@ -24,32 +24,9 @@ define([
     const nsISelectionDisplay = Ci.nsISelectionDisplay;
     const nsISelectionController = Ci.nsISelectionController;
     
-    //the name of our strings bundle
-    var DOJO_BUNDLE = "fbDojo_dojostrings";    
-    var DOJO_EXT_CSS_URL = "chrome://dojofirebugextension/skin/dojofirebugextension.css";
-    
-
-    var UI = {};
 
  // ***************************************************************
     
-    /**
-     * Return the visibility value for the parameter.
-     * @param visibility the visibility
-     */
-    var getVisibilityValue = UI.getVisibilityValue = function(visibility){
-        return visibility ? 'inherit' : 'none';
-    };
-       
-    /**
-     * sets our default css styles to a given document.
-     * This method is used by the panels on this file.
-     */
-    var addStyleSheet = UI.addStyleSheet = function(doc) {
-        Css.appendStylesheet(doc, DOJO_EXT_CSS_URL);
-    };        
-    
-
     var getSelectionController = function(panel) {
         var browser = Firebug.chrome.getPanelBrowser(panel);
         return browser.docShell.QueryInterface(nsIInterfaceRequestor)
@@ -132,93 +109,6 @@ define([
          };
      };
      
-// ***************************************************************     
-     
-     /**
-      * This class admin the a message box.
-      */
-     var ActionMessageBox = UI.ActionMessageBox = function(id, parentNode, msg, btnName, action) {
-         // Message box identifier
-         this._actionMessageBoxId = "actionMessageBoxId-" + id; 
-         
-         // The parentNode
-         this._parentNode = parentNode; 
-         
-         // The message
-         this._message = msg;
-         
-         // The button message
-         this._btnName = btnName;
-         
-         // The action
-         this._action = action;
-     };
-     ActionMessageBox.prototype = {
-
-             /**
-          * Load the message box in the parentPanel
-          * @param visibility boolean that define if the box should be visible or not.
-          */
-         loadMessageBox: function(visibility){
-             DojoReps.ActionMessageBox.tag.append({actionMessageBoxId: this._actionMessageBoxId,
-                                               visibility: this._getVisibilityValue(visibility),
-                                               message: this._message, btnName: this._btnName,
-                                               actionMessageBox: this}, this._parentNode);
-         },
-         
-         /**
-          * Show the message box (if it exist).
-          */
-         showMessageBox: function(){
-             this._setMessageBoxVisibility(true);
-         },
-         
-         /**
-          * Hide the message box (if it exist).
-          */
-         hideMessageBox: function(){
-             this._setMessageBoxVisibility(false);
-         },
-         
-         _getVisibilityValue: function(visibility){
-             return getVisibilityValue(visibility);
-         },
-         
-         /**
-          * Set message box visibility.
-          */
-         _setMessageBoxVisibility: function(visibility){
-             // FIXME: Use $() function. Find out why this._parentNode has no getElementById method.
-             //var msgbox = $(this._actionMessageBoxId, this._parentNode);
-             //var msgbox = this._parentNode.firstElementChild;
-             var msgbox = this._getMessageBox(this._parentNode, this._actionMessageBoxId);
-             msgbox = (msgbox && (msgbox.id == this._actionMessageBoxId)) ? msgbox :null ;
-             
-             if (msgbox) { msgbox.style.display = this._getVisibilityValue(visibility); }
-         },
-         
-         /**
-          * Find the msg box.
-          */
-         _getMessageBox: function(parentNode, boxId){
-             var children = parentNode.children;
-             var int;
-             for ( int = 0; int < children.length; int++) {
-                 var child = children[int];
-                 if (child.id == boxId) { 
-                     return child;
-                 }
-             }
-             return null;
-         },
-         
-         /**
-          * Execute the action.
-          */
-         executeAction: function(){
-             this._action(this);
-         }
-     };
      
           
      
@@ -226,9 +116,7 @@ define([
  // exported classes
  // ***************************************************************    
 
-    UI.ActionMessageBox = ActionMessageBox;
-    UI.DomHighlightSelector = DomHighlightSelector;   
-    UI.DOJO_BUNDLE = DOJO_BUNDLE;
+    UI.DomHighlightSelector = DomHighlightSelector;
     
     return UI;
 });

@@ -228,12 +228,15 @@ DojoAccess.DojoAccessor.prototype =
             var len = reg.length || reg._hash.length;
 
             if(!len) {                
-                //uff, event older version...
-                var count = 0;
-                reg.forEach(function(w) {
-                    count++;                    
-                });
-                len = count;
+                //uff, even an older version...
+                len = 0;
+                if(reg.forEach) {
+                    var count = 0;
+                    reg.forEach(function(w) {
+                        count++;                    
+                    });
+                    len = count;                    
+                }
             }
             
             return len;            
@@ -526,7 +529,7 @@ DojoAccess.DojoAccessor.prototype =
         }, 
         
         _getConnectionsAndSubscriptions: function(widget, context, /*object*/props, self) {
-            var tracker = context.connectionsAPI;
+            var tracker = context.tracker;
             if(tracker) {
                 if(widget._connects) {
                     var connects = [];
@@ -692,7 +695,7 @@ DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototy
     
     _getConnectionsAndSubscriptions: function(widget, context, props, self) {       
         
-        var tracker = context.connectionsAPI;
+        var tracker = context.tracker;
         if(tracker && widget._connects) {
             var connects = [];
             var subs = [];

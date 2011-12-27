@@ -16,7 +16,7 @@ function runTest()
 			var context = FW.Firebug.currentContext; //context!
 			
 			try {
-		    	var api = context.connectionsAPI;
+		    	var api = context.tracker;
 		    	var d = win.dojo;
 		    	FBTest.sysout("dojo version: " + d.version);
 		    		    	

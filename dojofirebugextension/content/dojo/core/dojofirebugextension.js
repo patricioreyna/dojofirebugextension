@@ -227,7 +227,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
             DojoDebug.initContext(context);
             DojoHooks.initContext(context);
         }
-        context.connectionsAPI = new DojoModel.ConnectionsAPI(DojoPrefs._isHashCodeBasedDictionaryImplementationEnabled());        
+        context.tracker = new DojoModel.Tracker(DojoPrefs._isHashCodeBasedDictionaryImplementationEnabled());        
         
         // FIXME: HACK to find out if the page need to be reloaded due to data inconsistencies issues.
         var dojo = DojoAccess._dojo(context);
@@ -267,14 +267,14 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         Firebug.ActivableModule.destroyContext.apply(this, arguments);
   
         //destroy what we created on initContext
-        context.connectionsAPI.destroy();
+        context.tracker.destroy();
         context.objectMethodProxier.destroy();
         
         DojoAccess.destroyInContext(context);
         DojoDebug.destroyInContext(context);
         DojoHooks.destroyInContext(context);
         
-        delete context.connectionsAPI;
+        delete context.tracker;
     },
             
     /**
@@ -318,7 +318,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
            if (dojo) {
                var startupHooks = DojoHooks.getImpl(context, dojo.version);
                try {
-               startupHooks.onCompilationUnit(context, url, kind, dojo, context.objectMethodProxier, dojoAccessor, dojoDebugger, context.connectionsAPI);
+               startupHooks.onCompilationUnit(context, url, kind, dojo, context.objectMethodProxier, dojoAccessor, dojoDebugger, context.tracker);
                } catch (error) {
                    if(FBTrace.DBG_DOJO) {
                        FBTrace.sysout(error);

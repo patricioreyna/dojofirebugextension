@@ -48,7 +48,7 @@ function runTest() {
 		    } catch (err) {
 		        FBTest.exception("Test: ", err);
 		    } finally {
-		    	//FW.Firebug.currentContext.connectionsAPI.destroy();
+		    	//FW.Firebug.currentContext.tracker.destroy();
 		        FBTest.testDone();
 		    }
 	    }});

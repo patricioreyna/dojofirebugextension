@@ -22,7 +22,7 @@ function runTest()
 			var context = FW.Firebug.currentContext; //context!
 			
 			try {
-		    	var api = context.connectionsAPI;
+		    	var api = context.tracker;
 		    	var conns = DojoModel.Connection.prototype.getGlobalConnections(api);
 		    	
 		    	// compare number of registered connections
