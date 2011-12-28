@@ -13,9 +13,8 @@
  */
 define([
         "firebug/firebug",
-        "firebug/firefox/firefox",
-        "firebug/firefox/menu",
         "firebug/lib/dom",
+        "firebug/lib/events",
         "firebug/lib/object",
         "firebug/lib/trace",
         "dojo/core/dojoaccess",
@@ -25,11 +24,9 @@ define([
         "dojo/core/prefs",
         "dojo/core/proxies",  
         "dojo/lib/collections",
-        "dojo/lib/utils",
-        "dojo/ui/dojoreps",
-        "dojo/ui/ui",
-       ], function dojoModuleFactory(Firebug, Firefox, Menu, Dom, Obj, FBTrace, DojoAccess, DojoDebug, DojoModel, 
-               DojoHooks, DojoPrefs, DojoProxies, Collections, DojoUtils, DojoReps, UI)
+        "dojo/lib/utils"
+       ], function dojoModuleFactory(Firebug, Dom, Events, Obj, FBTrace, DojoAccess, DojoDebug, DojoModel, 
+               DojoHooks, DojoPrefs, DojoProxies, Collections, DojoUtils)
 {
 
 // ****************************************************************
@@ -58,7 +55,7 @@ define([
     /**
      * returns the current context.
      */
-    /*context*/var safeGetContext = DojoExtension.safeGetContext = function(panel) {
+    /*context*/DojoExtension.safeGetContext = function(panel) {
         var ctx = panel.context;
         if(!ctx) {
             ctx = Firebug.currentContext;
@@ -70,7 +67,7 @@ define([
         context.needReload = flag;
     };
     
-    var needsReload = DojoExtension.needsReload = function(context) {
+    DojoExtension.needsReload = function(context) {
         return context.needReload;
     };
     
@@ -102,110 +99,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
     shutdown: function() {
         Firebug.ActivableModule.shutdown.apply(this, arguments);        
     },
-    
-    //firebug contextmenu inspect related methods
-    
-    _registerContextMenuListener: function() {
-        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
-            FBTrace.sysout("DOJO - registering Firefox ContextMenu listener");
-        }
-
-        var contextMenu = Firefox.$("contentAreaContextMenu");
-        if (contextMenu) {
-            contextMenu.addEventListener("popupshowing", this._onContentAreaContextMenuShowing, false);
-        }
-        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
-            FBTrace.sysout("DOJO - Firefox ContextMenu listener " + (contextMenu) ? "FOUND!" : "NOT FOUND!");
-        }
         
-    },
-
-    _unregisterContextMenuListener: function() {
-        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
-            FBTrace.sysout("DOJO - unregistering Firefox ContextMenu listener");
-        }
-
-        var contextMenu = Firefox.$("contentAreaContextMenu");        
-        if (contextMenu) {
-            contextMenu.removeEventListener("popupshowing", this._onContentAreaContextMenuShowing, false);
-        } 
-        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
-            FBTrace.sysout("DOJO - Firefox ContextMenu listener " + (contextMenu) ? "FOUND!" : "NOT FOUND!");
-        }
-        
-        var inspectItem = Firefox.$("fbDojo_menu_dojofirebugextension_inspect");
-        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
-            FBTrace.sysout("DOJO - contextMenu InspectItem " + (inspectItem) ? "FOUND!" : "NOT FOUND!");
-        }       
-        
-        if(inspectItem) {
-            inspectItem.hidden = true;    
-        }
-    },
-
-    
-    _onContentAreaContextMenuShowing: function(event) {
-        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
-            FBTrace.sysout("DOJO - _onContentAreaContextMenuShowing event", event);
-        }
-
-
-        var doc = event.target.ownerDocument;
-        var elt = doc.popupNode;
-
-        var inspectItem = Firefox.$("fbDojo_menu_dojofirebugextension_inspect");
-        if(!inspectItem) {
-            if(FBTrace.DBG_DOJO_CONTEXTMENU) {
-                FBTrace.sysout("DOJO - creating Dojo Inspect menu item: ", elt);
-            }
-
-            var contextMenu = Firefox.$("contentAreaContextMenu"); 
-            var itemToCreate = { id: "fbDojo_menu_dojofirebugextension_inspect", label: UI.$STR("window.contextmenuitem.inspect"), nol10n: true, command: Firebug.DojoExtension.dojofirebugextensionModel.inspectFromContextMenu, hidden: true };
-            inspectItem = Menu.createMenuItem(contextMenu, itemToCreate);
-        }
-
-
-        var context = Firebug.TabWatcher.getContextByWindow(elt.ownerDocument.defaultView);
-        if(!context) {
-            inspectItem.hidden = true;
-            return;
-        }
-        
-        var dojo = DojoAccess._dojo(context);
-        var disabledValue = false;
-        if(!dojo) {
-            inspectItem.hidden = true;
-        } else {
-            var isElemSupported = DojoExtension.dojofirebugextensionModel._getDojoPanel(context).supportsObject(elt);
-            inspectItem.hidden = !isElemSupported;
-        }    
-    },
-
-    /**
-     * inspector related method
-     * TODO (multi-process) should be moved to a UI related class
-     */
-    inspectFromContextMenu: function(event) {
-        if(FBTrace.DBG_DOJO_CONTEXTMENU) {
-            FBTrace.sysout("DOJO - Inspect from contextMenu invoked: ", event);
-        }            
-        
-        var elt = event.target.ownerDocument.popupNode;
-        
-        var panel, inspectingPanelName;
-        var context = Firebug.TabWatcher.getContextByWindow(elt.ownerDocument.defaultView);
-
-        inspectingPanelName = "dojofirebugextension";
-
-        Firebug.toggleBar(true, inspectingPanelName);
-        Firebug.chrome.select(elt, inspectingPanelName);
-
-        panel = Firebug.chrome.selectPanel(inspectingPanelName);
-        panel.panelNode.focus();
-    },
-    
-    //end of firebug contextmenu inspect related methods
-    
     initContext: function(context, persistedState) {
         Firebug.ActivableModule.initContext.apply(this, arguments);
         
@@ -245,6 +139,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
             return;
         }
         
+        //TODO here use fbListeners to decouple from main panel
         var panel = this._getDojoPanel(context);
         
         if (panel) {
@@ -367,7 +262,6 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
    },
    
    enableExtension: function() {
-       //(multi-process) probably will need to fire event and execute this on UI side
        if(this.extensionLoaded) {
            return;
        }
@@ -383,12 +277,11 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
            Firebug.connection.addListener(this);
        }
 
-       //FF main context menu 
-       this._registerContextMenuListener();
+       if(FBTrace.DBG_DOJO) {
+           FBTrace.sysout("DOJO - about to dispatch onDojoExtensionEnabled to fbListeners");
+       }
+       Events.dispatch(this.fbListeners, "onDojoExtensionEnabled");
        
-       //TODO (multi-process) remove this dependency!       
-       DojoReps.registerReps();
-
        //last step
        this.extensionLoaded = true;
    },
@@ -403,12 +296,11 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
            FBTrace.sysout("DOJO - disableExtension");
        }
 
-       //TODO (multi-process) remove this dependency!
-       DojoReps.unregisterReps();
-
-       //FF main context menu 
-       this._unregisterContextMenuListener();
-       
+       if(FBTrace.DBG_DOJO) {
+           FBTrace.sysout("DOJO - about to dispatch onDojoExtensionDisabled to fbListeners");
+       }
+       Events.dispatch(this.fbListeners, "onDojoExtensionDisabled");
+              
        if (Firebug.connection) {
            if(FBTrace.DBG_DOJO) {
                FBTrace.sysout("DOJO - removing arch/browser listener");

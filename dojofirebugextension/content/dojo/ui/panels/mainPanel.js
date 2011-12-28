@@ -93,7 +93,7 @@ define([
 // ****************************************************************
 
 var SHOW_WIDGETS = 10;
-var SHOW_CONNECTIONS = 20;
+//var SHOW_CONNECTIONS = 20;
 var SHOW_CONNECTIONS_TABLE = 30;
 var SHOW_SUBSCRIPTIONS = 40;
 var SHOW_ONASPECTS_TABLE = 50;
@@ -118,7 +118,7 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
      */
     initialize: function(context, doc) {
         Firebug.ActivablePanel.initialize.apply(this, arguments);
-        
+                
         if(context.dojo && !context.dojo.mainMenuSelectedOption) { 
             context.dojo.mainMenuSelectedOption = SHOW_WIDGETS;            
         }
@@ -1151,13 +1151,13 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
 // exported static methods
 // ***************************************************************    
 
-    var _getDojoPanel = function(context) {
-        return context.getPanel(DojoPanels.dojofirebugextensionPanel.prototype.name);
-    };
-
     
     var exportedUIMethods = {};
-    
+
+    var _getDojoPanel = exportedUIMethods.getDojoPanel = function(context) {
+        return context.getPanel(DojoPanels.mainPanelName);
+    };
+
     /**
      * show the about message
      */
