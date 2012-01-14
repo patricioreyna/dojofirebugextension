@@ -25,14 +25,28 @@ define([
 
     var DojoAccess = {};
 
+    var _getAlias = function(name) {
+        var alias = name;
+        var aliases = DojoPrefs.getAliases();
+        
+        if(aliases) {
+            alias = aliases[name] || name;
+        }
+        return alias;
+    };
+    
     //FIXME: This way of access objects is unsecure. Decouple communication with page and implement a secure mechanism.
     var _dojo = DojoAccess._dojo = function(context) {
         //UNSECURE
         if(!context.window) {
             return null;
         }
+        var alias=_getAlias('dojo');
+        if(FBTrace.DBG_DOJO_ALIASES) {
+            FBTrace.sysout("DOJO ALIAS for dojo: "+alias);
+        }
         
-        return Wrapper.unwrapObject(context.window).dojo || null;        
+        return Wrapper.unwrapObject(context.window)[alias] || null;        
     };
     
     //FIXME: This way of access objects is unsecure. Decouple communication with page and implement a secure mechanism.
@@ -41,8 +55,12 @@ define([
         if(!context.window) {
             return null;
         }
+        var alias=_getAlias('dijit');
+        if(FBTrace.DBG_DOJO_ALIASES) {
+            FBTrace.sysout("DOJO ALIAS for dijit: "+alias);
+        }
 
-        return Wrapper.unwrapObject(context.window).dijit || null;        
+        return Wrapper.unwrapObject(context.window)[alias] || null;        
     };
 
     

@@ -25,7 +25,7 @@ define([
     var documentation_API_DOC_URL_BASE = "dojofirebugextension.documentation.API_DOC_URL_BASE";
     var documentation_DOC_SORTED_VERSIONS = "dojofirebugextension.documentation.DOC_SORTED_VERSIONS";
 
-
+    
     var isExtensionEnabled = DojoPrefs.isExtensionEnabled = function() {
         return Firebug.Options.getPref("extensions.firebug.dojofirebugextension", "enableSites");
     };
@@ -104,6 +104,32 @@ define([
     var getApiDocURL = DojoPrefs.getApiDocURL = function() {
         return Firebug.Options.getPref(Firebug.Options.getPrefDomain(), documentation_API_DOC_URL_BASE);
     };
+   
+    //DOJO ALIASES (ie. scopeMap)
+    var aliasCacheStr, aliasCache;
+    DojoPrefs.getAliases = function() {
+        var value = Firebug.Options.getPref("extensions.firebug.dojofirebugextension", "aliases");
+        if(!value) {
+            return;
+        }
+        if(aliasCacheStr == value) {
+            if(FBTrace.DBG_DOJO_ALIASES) {
+                FBTrace.sysout("DOJO ALIASES - returning cached value: ", [value, aliasCacheStr, aliasCache]);   
+            }
+            return aliasCache;
+        }
+        aliasCacheStr = value;
+        try {
+            aliasCache = JSON.parse(value);
+            return aliasCache;
+        } catch(err) {
+            if(FBTrace.DBG_DOJO_ALIASES) {
+                FBTrace.sysout("DOJO ALIASES ERROR: value="+value, err);
+            }
+            return;
+        }
+    };
+
     
     // ***************************************************************
         
