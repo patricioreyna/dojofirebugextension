@@ -14,35 +14,10 @@
 define([
         "firebug/firebug",
         "firebug/lib/object",
-        "firebug/lib/trace",
         "dojo/ui/messageBox",
         "dojo/ui/panels/panelCommons"
-       ], function otherFbugPanelsFactory(Firebug, Obj, FBTrace, MessageBox, DojoPanels)
+       ], function otherFbugPanelsFactory(Firebug, Obj, MessageBox, DojoPanels)
 {
-
-/**
- * @panel DOM Side Panel.
- * This side panel shows the same info the the DOM panel shows for the selected object. 
- */
-var DojoDOMSidePanel = function(){};
-DojoDOMSidePanel.prototype = Obj.extend(Firebug.DOMBasePanel.prototype,
-{
-    name: "dojoDomSidePanel",
-    title: "DOM",
-    parentPanel: DojoPanels.mainPanelName,
-    order: 9,
-    enableA11y: true,
-    deriveA11yFrom: "console",
-    
-    updateSelection: function(object) {
-       if (DojoPanels._safeGetContext(this).dojoExtensionSelection) {
-            return Firebug.DOMBasePanel.prototype.updateSelection.apply(this, arguments);
-       }
-    }
-
-});
-
-// ************************************************************************************************
 
 /**
  * @panel HTML Side Panel.
@@ -93,9 +68,9 @@ DojoHTMLPanel.prototype = Obj.extend(Firebug.HTMLPanel.prototype,
 // exported classes
 // ***************************************************************    
 
-    DojoPanels.DojoDOMSidePanel = DojoDOMSidePanel;
     DojoPanels.DojoHTMLPanel = DojoHTMLPanel;
     
-
+// ***************************************************************    
+    
     return DojoPanels;
 });

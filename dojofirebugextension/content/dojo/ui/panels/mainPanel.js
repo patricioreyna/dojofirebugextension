@@ -31,14 +31,15 @@ define([
         "dojo/ui/uihelpers",        
         "dojo/ui/panels/connectionsSidePanel",
         "dojo/ui/panels/dojoInfoSidePanel",
+        "dojo/ui/panels/domSidePanel",
+        "dojo/ui/panels/htmlSidePanel",        
         "dojo/ui/panels/onAspectSidePanel",
         "dojo/ui/panels/panelCommons",
         "dojo/ui/panels/subscriptionsSidePanel",
-        "dojo/ui/panels/widgetPropertiesSidePanel",        
-        "dojo/ui/panels/firebugSidePanels"
+        "dojo/ui/panels/widgetPropertiesSidePanel"
        ], function dojoPanelsFactory(Firebug, Xpcom, Css, Json, Locale, Obj, Search, Str, FBTrace, DojoExtension, 
-               DojoModel, DojoPrefs, Collections, DojoReps, UI, MessageBox, UiHelpers, ConnectionsSidePanel, DojoInfoSidePanel, OnAspectSidePanel, 
-               DojoPanels, SubscriptionsSidePanel, WidgetPropertiesSidePanel)
+               DojoModel, DojoPrefs, Collections, DojoReps, UI, MessageBox, UiHelpers, ConnectionsSidePanel, DojoInfoSidePanel, DomSidePanel, HtmlSidePanel, 
+               OnAspectSidePanel, DojoPanels, SubscriptionsSidePanel, WidgetPropertiesSidePanel)
 {
 
     //FIXME refactor this file into smaller ones

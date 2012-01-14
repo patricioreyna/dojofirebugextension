@@ -7,7 +7,7 @@
 
 
 /**
- * Common functions for panels
+ * Common functions and mixins for panels
  * @author preyna@ar.ibm.com
  * @author fergom@ar.ibm.com
  */
