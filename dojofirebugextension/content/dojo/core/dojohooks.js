@@ -150,7 +150,88 @@ define([
                     
                     //trace
                     this._fbTraceConnectionsNotTracked(context);
-                }                
+                }
+
+                var dojox = DojoAccess._dojox(context);
+                if (!context.gfxHooked && dojox && dojox.gfx && dojox.gfx.shape && dojox.gfx.shape.Surface && dojox.gfx.shape.Container) {
+                    context.gfxHooked = true;
+
+                    this.injectProxiesGFX(context, dojo, dojox, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+                    if(FBTrace.DBG_DOJO) {
+                        FBTrace.sysout("DOJO GFX TRACKED !");
+                    }
+                }
+                
+            },
+
+            injectProxiesGFX: function(context, dojo, dojox, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+                
+                if(FBTrace.DBG_DOJO) {
+                    FBTrace.sysout("injecting wrappers to dojox.gfx.shape.Surface global");
+                }
+
+                proxyFactory.proxyFunction(context, dojox.gfx.shape.Container, "_init", null, this._proxyGfxSurfaceConstructor(context, dojox.gfx.shape.Container, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, dojox.gfx.shape.Surface.prototype, "destroy", this._proxyGfxSurfaceDestructor(context, dojox.gfx.shape.Surface.prototype, dojoAccess, dojoDebugger, dojoTracker), null);
+                proxyFactory.proxyFunction(context, dojox.gfx.shape.Container, "add", null, this._proxyGfxContainerModified(context, dojox.gfx.shape.Container, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, dojox.gfx.shape.Container, "remove", null, this._proxyGfxContainerModified(context, dojox.gfx.shape.Container, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, dojox.gfx.shape.Container, "clear", null, this._proxyGfxContainerModified(context, dojox.gfx.shape.Container, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, dojox.gfx.shape.Container, "_moveChildToFront", null, this._proxyGfxContainerModified(context, dojox.gfx.shape.Container, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, dojox.gfx.shape.Container, "_moveChildToBack", null, this._proxyGfxContainerModified(context, dojox.gfx.shape.Container, dojoAccess, dojoDebugger, dojoTracker));
+                
+                
+                // FIXME[BugTicket#91]: Replace this hack fix for a communication mechanism based on events.
+                DojoProxies.protectProxy(context, dojox.gfx.shape.Container, '_init', "add", "remove", "clear", "_moveChildToFront", "_moveChildToBack");
+                DojoProxies.protectProxy(context, dojox.gfx.shape.Surface.prototype, 'destroy');
+            },
+
+            _proxyGfxSurfaceConstructor: function(context, containerProto, dojoAccess, dojoDebugger, dojoTracker) {
+
+                if(FBTrace.DBG_DOJO) {
+                    FBTrace.sysout("DOJO GFX creating gfx surface proxy");
+                    
+                }
+
+                var self = this;
+                return function(ret, args) {
+                   
+                    if(FBTrace.DBG_DOJO_DBG) {                        
+                        FBTrace.sysout("DOJO DEBUG: Surface's constructor invoked with this args and result: ", { 'args':args, 'ret':ret});
+                    }
+
+                    dojoAccess.trackGFXSurface(this, context);
+                };
+            },
+            _proxyGfxSurfaceDestructor: function(context, surfaceProto, dojoAccess, dojoDebugger, dojoTracker) {
+
+                if(FBTrace.DBG_DOJO) {
+                    FBTrace.sysout("DOJO GFX creating gfx surface proxy for destroy");
+                    
+                }
+
+                var self = this;
+                return function(ret, args) {
+                   
+                    if(FBTrace.DBG_DOJO_DBG) {                        
+                        FBTrace.sysout("DOJO DEBUG: Surface's destroy invoked with this args and result: ", { 'args':args, 'ret':ret});
+                    }
+
+                    dojoAccess.untrackGFXSurface(this, context);
+                };
+            },
+            _proxyGfxContainerModified: function(context, containerProto, dojoAccess, dojoDebugger, dojoTracker) {
+                if(FBTrace.DBG_DOJO) {
+                    FBTrace.sysout("DOJO GFX creating gfx container proxy");
+                    
+                }
+
+                var self = this;
+                return function(ret, args) {
+                   
+                    if(FBTrace.DBG_DOJO_DBG) {                        
+                        FBTrace.sysout("DOJO DEBUG: Container's modificationmethod invoked with this args and result: ", { 'args':args, 'ret':ret});
+                    }
+                    dojoAccess.gfxContainerStructureModified(this, context);
+                };                
             },
 
             injectProxiesDojoGlobal: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
@@ -461,12 +542,22 @@ define([
         _getModule: function(context, moduleName) {
             var require = Wrapper.unwrapObject(context.window).require;
             var module = require.modules[moduleName];
-            
+            var res;
             if(module && module.executed && (module.executed == 'executed' || module.executed.value == 'executed')) {
-                return module.result;
+                res = module.result;
             } else {
-                return undefined;
-            }            
+                res = undefined;
+            }
+
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO HOOKS GETMODULE", { modname: moduleName, module: module, result: res } );
+                if(module) {
+                    FBTrace.sysout("DOJO HOOKS GETMODULE MORE INFO", { modname: moduleName, modExecuted: module.executed, modResult: module.result } );    
+                }                
+            }
+
+            return res;
+
         },     
         
         _getWidgetBaseModule: function(context) {
@@ -712,6 +803,13 @@ define([
             //let's wrap _WidgetBase functions (connect, subscribe..) as well ..
             this.injectProxiesWidgetBase(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
             this.checkWidgetModuleLoaded(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);            
+
+            //trace
+            this._fbTraceConnectionsNotTracked(context);
+
+
+            //GFX hooks!
+            this.injectProxiesGFX(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
         },
 
         /**
@@ -814,7 +912,7 @@ define([
                 }
 
                 //in this case we don't use _createProxy function because we need different parameters
-                proxyFactory.proxyFunction(context, mod, "parse", this._proxyPreExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker, 3, false, "on.parse"), this._postFunctionExecutor(context, dojoTracker, this._proxyOnParsePostExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this.EXECUTE.ALWAYS));                
+                proxyFactory.proxyFunction(context, mod, "parse", this._proxyPreExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker, 3, false, "on.parse"), this._postFunctionExecutor(context, dojoTracker, this._proxyOnParsePostExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this.EXECUTE.ALWAYS));
             }
         },
         
@@ -908,7 +1006,7 @@ define([
                     var stackDepthValue = (typeof stackDepth == "object" ? stackDepth.value : stackDepth) || 0;
                     var callerInfo = (context.initialConfig.breakPointPlaceSupportEnabled) ? dojoDebugger.getDebugInfoAboutCaller(context, stackDepthValue) : null;
                     context.dojoextProxyChain_InfoAboutCaller = callerInfo;
-                    if(FBTrace.DBG_DOJO_DBG) {
+                    if(FBTrace.DBG_DOJO_DBG && callerInfo) {
                         FBTrace.sysout("DOJO callerInfo sourceFile=" + callerInfo.scriptInfo.sourceFile + " lineNo=" + callerInfo.scriptInfo.lineNo);
                     }
 
@@ -1305,7 +1403,101 @@ define([
          };
          fn.dojoext_name = "_proxySubscribeWidgetBase";
          return fn;
-      }
+      },
+
+      /* ****************************** GFX **************************** */
+  
+        injectProxiesGFX: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+            
+            if (context.gfxHooked) {
+                return;
+            }
+
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DOJO GFX entering injectProxiesGFX");
+            }
+            
+            var mod = this._getModule(context, 'dojox/gfx/shape');
+            if(!mod) {
+                return;
+            }
+            
+            context.gfxHooked = true;                
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DOJO GFX TRACKED !");
+            }
+            
+
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("injecting wrappers to dojox.gfx.shape.Surface global");
+            }
+
+            proxyFactory.proxyFunction(context, mod.Container, "_init", null, this._proxyGfxSurfaceConstructor(context, dojoAccess, dojoDebugger, dojoTracker));
+            proxyFactory.proxyFunction(context, mod.Surface.prototype, "destroy", this._proxyGfxSurfaceDestructor(context, dojoAccess, dojoDebugger, dojoTracker), null);
+            proxyFactory.proxyFunction(context, mod.Container, "add", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
+            proxyFactory.proxyFunction(context, mod.Container, "remove", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
+            proxyFactory.proxyFunction(context, mod.Container, "clear", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
+            proxyFactory.proxyFunction(context, mod.Container, "_moveChildToFront", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
+            proxyFactory.proxyFunction(context, mod.Container, "_moveChildToBack", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));                    
+        },
+
+        _proxyGfxSurfaceConstructor: function(context, dojoAccess, dojoDebugger, dojoTracker) {
+
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DOJO GFX creating gfx surface proxy");
+                
+            }
+
+            var self = this;
+            var fn =function(ret, args) {
+               
+                if(FBTrace.DBG_DOJO_DBG) {                        
+                    FBTrace.sysout("DOJO DEBUG: Surface's constructor invoked with this args and result: ", { 'args':args, 'ret':ret});
+                }
+
+                dojoAccess.trackGFXSurface(this, context);
+            };
+            fn.dojoext_name = "_proxyGfxSurfaceConstructor";
+            return fn;
+        },
+    
+        _proxyGfxSurfaceDestructor: function(context, dojoAccess, dojoDebugger, dojoTracker) {
+
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DOJO GFX creating gfx surface proxy for destroy");
+                
+            }
+
+            var self = this;
+            var fn = function(ret, args) {
+               
+                if(FBTrace.DBG_DOJO_DBG) {                        
+                    FBTrace.sysout("DOJO DEBUG: Surface's destroy invoked with this args and result: ", { 'args':args, 'ret':ret});
+                }
+
+                dojoAccess.untrackGFXSurface(this, context);
+            };
+            fn.dojoext_name = "_proxyGfxSurfaceDestructor";
+            return fn;            
+        },
+    
+        _proxyGfxContainerModified: function(context, dojoAccess, dojoDebugger, dojoTracker) {
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("DOJO GFX creating gfx container proxy");
+                
+            }
+
+            var self = this;
+            var fn = function(ret, args) {
+               
+                if(FBTrace.DBG_DOJO_DBG) {                        
+                    FBTrace.sysout("DOJO DEBUG: Container's modificationmethod invoked with this args and result: ", { 'args':args, 'ret':ret});
+                }
+                dojoAccess.gfxContainerStructureModified(this, context);
+            };
+            fn.dojoext_name = "_proxyGfxContainerModified";
+            return fn;                        
+        }
 
     });
 

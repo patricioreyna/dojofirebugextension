@@ -212,7 +212,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
            if (dojo) {
                var startupHooks = DojoHooks.getImpl(context, dojo.version);
                try {
-               startupHooks.onCompilationUnit(context, url, kind, dojo, context.objectMethodProxier, dojoAccessor, dojoDebugger, context.tracker);
+                   startupHooks.onCompilationUnit(context, url, kind, dojo, context.objectMethodProxier, dojoAccessor, dojoDebugger, context.tracker);
                } catch (error) {
                    if(FBTrace.DBG_DOJO) {
                        FBTrace.sysout(error);
@@ -223,12 +223,18 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
            //register a dojo.ready callback
            if(!context.showInitialViewCall && dojo && (dojo.ready || dojo.addOnLoad)) {
                var showInitialViewCall = context.showInitialViewCall = function showInitialView() {
+                  //FIXME this is a hack . We are accessing our UIs directly 
                    var panel = DojoExtension.dojofirebugextensionModel._getDojoPanel(context);                    
                    if (panel) {
-                       // Show the initial view.
+                       // Show the initial view.                       
                        panel.showInitialView(context);
+                   }                   
+                   var gfxPanel = context.getPanel("dojofirebugextension_GFX");                                       
+                   if (gfxPanel) {
+                       gfxPanel.showInitialView(context);
                    }
-                   };
+
+                };
                DojoUtils._addMozillaExecutionGrants(showInitialViewCall);               
                //dojo.addOnLoad
                var dojoReadyFn = dojo.ready || dojo.addOnLoad;

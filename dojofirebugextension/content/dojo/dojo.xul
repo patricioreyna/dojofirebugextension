@@ -45,13 +45,14 @@
 
 				<span id="fbDojo_dojoFilter-boxes">
 	                <!-- from box -->
-	                [Begin:
+			[
+			<label value="&dojo.filter.begin;" control="fbDojo_dojoConnFromIndexBox"/>
 	                <vbox flex="40">
 	                    <spacer flex="1"/>
 	                    <textbox id="fbDojo_dojoConnFromIndexBox" type="dojoConnFromIndexBox" value="0"/>
 	                    <spacer flex="1"/>
 	                </vbox>
-	                End:
+			<label value="&dojo.filter.end;" control="fbDojo_dojoConnCountBox"/>
 	                <!-- count Box -->                					
 	                <vbox flex="40">
 	                    <spacer flex="1"/>
@@ -59,19 +60,20 @@
 	                    <spacer flex="1"/>
 	                </vbox>           	                	
 	                <!-- query Box -->
-	                Filter:
+			<label value="&dojo.filter.filter;" control="fbDojo_dojoConnFilterBox"/>
 	                <vbox flex="40">
 	                    <spacer flex="1"/>
-	                    <textbox id="fbDojo_dojoConnFilterBox" type="dojoConnFilterBox" placeholder="type query here"/>
+	                    <textbox id="fbDojo_dojoConnFilterBox" type="dojoConnFilterBox" placeholder="&dojo.filter.placehoder;" tooltiptext="&dojo.filter.tooltip;"/>
 	                    <spacer flex="1"/>
 	                </vbox>
-	                <button id="fbDojo_dojoApplyFilterButton" label="Apply"
+	                <button id="fbDojo_dojoApplyFilterButton" label="&dojo.filter.apply;"
 	                	command="cmd_dojofirebugextensionViewConnectionsInTable"/>
-					]
+			]
 
                 </span>
                     
            </hbox>
+
        </hbox>
     </toolbar>
 

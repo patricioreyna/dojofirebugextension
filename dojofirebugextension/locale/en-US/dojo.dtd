@@ -4,6 +4,14 @@
 <!ENTITY  dojo.connections.label         "All connections">
 <!ENTITY  dojo.connections.tooltip       "View all connections">
 
+<!ENTITY  dojo.filter.begin         "Begin:">
+<!ENTITY  dojo.filter.end           "End:">
+<!ENTITY  dojo.filter.filter        "Filter:">
+<!ENTITY  dojo.filter.placehoder    "type query here as JSON">
+<!ENTITY  dojo.filter.tooltip       "{'object': 'VALUE' , 'event': 'VALUE', 'context': 'VALUE', 'method': 'VALUE'}">
+
+<!ENTITY  dojo.filter.apply         "Apply">
+
 <!ENTITY  dojo.widgets.label         "All widgets">
 <!ENTITY  dojo.widgets.tooltip       "View all widgets from dijit registry">
 

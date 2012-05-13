@@ -20,14 +20,17 @@ define([
         "dojo/core/dojoaccess",
         "dojo/core/dojofirebugextension",
         "dojo/ui/dojoreps",
+        "dojo/ui/gfxreps",
         "dojo/ui/ui",
+        "dojo/ui/panels/gfxMainPanel",
         "dojo/ui/panels/mainPanel",
         "dojo/ui/panels/panelCommons"
-       ], function dojoPanelsFactory(Firebug, Firefox, Menu, Obj, FBTrace, DojoAccess, DojoExtension, DojoReps, UI, DojoMainPanel, DojoPanels)
+       ], function dojoPanelsFactory(Firebug, Firefox, Menu, Obj, FBTrace, DojoAccess, DojoExtension, DojoReps, GfxReps, UI, GfxPanel, DojoMainPanel, DojoPanels)
 {
 
     //first: register the main panel
     DojoMainPanel.registerPanel();
+    GfxPanel.registerPanel();
     
     
     //now, integrate with FF 's UI
@@ -39,7 +42,9 @@ define([
                 //FF main context menu 
                 this._registerContextMenuListener();
                 
-                DojoReps.registerReps();        
+                //order is important!
+                GfxReps.registerReps();
+                DojoReps.registerReps();            
             },
             
             /**
@@ -47,7 +52,9 @@ define([
              */
             onDojoExtensionDisabled: function() {
 
+                GfxReps.unregisterReps();
                 DojoReps.unregisterReps();
+                
 
                 //FF main context menu 
                 this._unregisterContextMenuListener();        
@@ -97,6 +104,17 @@ define([
                 if(inspectItem) {
                     inspectItem.hidden = true;    
                 }
+
+                //GFX
+                var inspectItemGFX = Firefox.$("fbDojo_menu_dojofirebugextension_inspect_GFX");
+                if(FBTrace.DBG_DOJO_CONTEXTMENU) {
+                    FBTrace.sysout("DOJO - contextMenu InspectItem GFX" + ((inspectItemGFX) ? "FOUND!" : "NOT FOUND!"));
+                }       
+                
+                if(inspectItemGFX) {
+                    inspectItemGFX.hidden = true;    
+                }
+
             },
             
             _onContentAreaContextMenuShowing: function(event) {
@@ -119,19 +137,47 @@ define([
                     var itemToCreate = { id: "fbDojo_menu_dojofirebugextension_inspect", label: UI.$STR("window.contextmenuitem.inspect"), nol10n: true, command: this.inspectFromContextMenu, hidden: true };
                     inspectItem = Menu.createMenuItem(contextMenu, itemToCreate);
                 }
+                var gfxInspectItem = Firefox.$("fbDojo_menu_dojofirebugextension_inspect_GFX");
+                if(!gfxInspectItem) {
+                    if(FBTrace.DBG_DOJO_CONTEXTMENU) {
+                        FBTrace.sysout("DOJO - creating Dojo Inspect GFX menu item: ", elt);
+                    }
+
+                    var contextMenu = Firefox.$("contentAreaContextMenu"); 
+                    var itemToCreateGFX = { id: "fbDojo_menu_dojofirebugextension_inspect_GFX", label: UI.$STR("window.contextmenuitem..gfx.inspect"), nol10n: true, command: this.inspectFromContextMenuGFX, hidden: true };
+                    gfxInspectItem = Menu.createMenuItem(contextMenu, itemToCreateGFX);
+                }
+
 
                 var context = Firebug.TabWatcher.getContextByWindow(elt.ownerDocument.defaultView);
                 if(!context) {
                     inspectItem.hidden = true;
+                    gfxInspectItem.hidden = true;
                     return;
                 }
                 
                 var dojo = DojoAccess._dojo(context);
                 if(!dojo) {
                     inspectItem.hidden = true;
+                    gfxInspectItem.hidden = true;
                 } else {
-                    var isElemSupported = DojoExtension.ui.getDojoPanel(context).supportsObject(elt);
-                    inspectItem.hidden = !isElemSupported;
+                    try {
+                        var gfxPanel = DojoExtension.ui.getDojoGFXPanel(context);
+                        var isGFXElemSupported = gfxPanel && gfxPanel.supportsObject(elt); 
+                        if(FBTrace.DBG_DOJO_CONTEXTMENU && isGFXElemSupported) {
+                            FBTrace.sysout("DOJO - supported by GFX", elt);
+                        }
+
+                        var dojoPanel = DojoExtension.ui.getDojoPanel(context);
+                        var isElemSupported = dojoPanel && dojoPanel.supportsObject(elt);
+                        if(FBTrace.DBG_DOJO_CONTEXTMENU && isElemSupported) {
+                            FBTrace.sysout("DOJO - supported by dojo main", elt);
+                        }                    
+                        inspectItem.hidden = !isElemSupported;
+                        gfxInspectItem.hidden = !isGFXElemSupported;
+                    } catch (e) {
+                        FBTrace.sysout("DOJO ERROR - supported by GFX or main", e);   
+                    }
                 }    
             },
 
@@ -146,6 +192,25 @@ define([
                 var elt = event.target.ownerDocument.popupNode;        
 
                 var inspectingPanelName = DojoPanels.mainPanelName;
+                
+                Firebug.toggleBar(true, inspectingPanelName);
+                Firebug.chrome.select(elt, inspectingPanelName);
+
+                var panel = Firebug.chrome.selectPanel(inspectingPanelName);
+                panel.panelNode.focus();
+            },
+
+            /**
+             * inspector related method
+             */
+            inspectFromContextMenuGFX: function(event) {
+                if(FBTrace.DBG_DOJO_CONTEXTMENU) {
+                    FBTrace.sysout("DOJO - Inspect from GFX contextMenu invoked: ", event );
+                }            
+                
+                var elt = event.target.ownerDocument.popupNode;
+
+                var inspectingPanelName = DojoPanels.gfxMainPanelName;
                 
                 Firebug.toggleBar(true, inspectingPanelName);
                 Firebug.chrome.select(elt, inspectingPanelName);

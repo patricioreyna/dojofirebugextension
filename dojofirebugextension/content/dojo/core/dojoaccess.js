@@ -15,12 +15,13 @@
  * @author fergom@ar.ibm.com
  */
 define([
+        "firebug/lib/events",
         "firebug/lib/lib",
         "firebug/lib/object",
         "firebug/lib/trace",
         "firebug/lib/wrapper",
         "dojo/core/prefs"
-       ], function dojoAccessFactory(FBL, Obj, FBTrace, Wrapper, DojoPrefs)
+       ], function dojoAccessFactory(Events, FBL, Obj, FBTrace, Wrapper, DojoPrefs)
 {
 
     var DojoAccess = {};
@@ -35,6 +36,44 @@ define([
         return alias;
     };
     
+    // _getAliasAMD = function(moduleName, context) {
+    //     var require = _getRequireJS(context);
+    //     if(require.aliases)
+    // };
+
+    // _getRequireJS = function(context) {
+    //     if(!context.window) {
+    //         return null;
+    //     }
+    //     return Wrapper.unwrapObject(context.window).require || null;
+    // };
+
+    // /**
+    //  *  get an AMD module
+    //  *  returns the module (or null if module not available)
+    //  */
+    // _getModule = function(moduleName, context) {
+    //     //UNSECURE
+    //     if(!context.window) {
+    //         return null;
+    //     }
+
+    //     var require = _getRequireJS(context);
+    //     if(!require) {
+    //         return null;
+    //     }
+
+    //     var module = require.modules[moduleName];
+    //     var res;
+    //     if(module && module.executed && (module.executed == 'executed' || module.executed.value == 'executed')) {
+    //         res = module.result;
+    //     } else {
+    //         res = null;
+    //     }
+
+    //     return res;
+    // };
+
     //FIXME: This way of access objects is unsecure. Decouple communication with page and implement a secure mechanism.
     var _dojo = DojoAccess._dojo = function(context) {
         //UNSECURE
@@ -50,7 +89,7 @@ define([
     };
     
     //FIXME: This way of access objects is unsecure. Decouple communication with page and implement a secure mechanism.
-    var _dijit = function(context) {
+    var _dijit = DojoAccess._dijit = function(context) {
         //UNSECURE
         if(!context.window) {
             return null;
@@ -58,6 +97,19 @@ define([
         var alias=_getAlias('dijit');
         if(FBTrace.DBG_DOJO_ALIASES) {
             FBTrace.sysout("DOJO ALIAS for dijit: "+alias);
+        }
+
+        return Wrapper.unwrapObject(context.window)[alias] || null;        
+    };
+
+    var _dojox = DojoAccess._dojox = function(context) {
+        //UNSECURE
+        if(!context.window) {
+            return null;
+        }
+        var alias=_getAlias('dojox');
+        if(FBTrace.DBG_DOJO_ALIASES) {
+            FBTrace.sysout("DOJO ALIAS for dojox: "+alias);
         }
 
         return Wrapper.unwrapObject(context.window)[alias] || null;        
@@ -659,7 +711,276 @@ DojoAccess.DojoAccessor.prototype =
             }
             
             return DojoPrefs.getReferenceGuideURL() + declaredClassName.replace('.', '/', "g") + ".html";
+        },
+
+
+        // **************************** GFX METHODS *****************************
+
+        isGfxObject: function(object, context) {        
+            if(!object) {
+                return false;
+            }
+            return object['declaredClass'] && ('rawNode' in object) && (object['declaredClass'].indexOf("dojox.gfx") > -1);
+        },
+
+        /**
+         * returns true if the given object is a gfx shape.
+         * @param object
+         * @return boolean
+         */
+        isGfxShape: function(object, context) {
+            if(!this.isGfxObject(object, context)) {
+                return false;
+            }
+
+            var dojox = DojoAccess._dojox(context);
+            return object.isInstanceOf(dojox.gfx.shape.Shape);
+            // return object['declaredClass'] && ('rawNode' in object) && (object['declaredClass'].indexOf("dojox.gfx") > -1) && !('whenLoaded' in object);
+        },
+
+        isGfxSurface: function(object, context) {
+            if(!this.isGfxObject(object, context)) {
+                return false;
+            } 
+            var dojox = DojoAccess._dojox(context);
+            return object.isInstanceOf(dojox.gfx.shape.Surface);
+        },
+
+        doesNodeBelongToShape: function(node, context) {
+            if(FBTrace.DBG_DOJO) {
+                //FBTrace.sysout("DOJO ACCESSOR GFX - doesNodeBelongToShape ", { 'node':node , 'trackedSurfaces': context.dojo.gfxSurfaces } );
+                FBTrace.sysout("DOJO ACCESSOR GFX - doesNodeBelongToShape ", node );
+            }
+
+            return this.getShapeFromNode(node, context) != undefined;
+        },
+
+        getShapeFromNode: function(node, context) {
+
+            if(!node || !context || !context.dojo || !context.dojo.gfxSurfaces) {
+                return;
+            }
+
+            var origNode = node;    
+            node = Wrapper.unwrapObject(node);
+            if(!node) {
+                return;
+            }
+
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO ACCESSOR GFX - getShapeFromNode ", { node: origNode, unwrapped: node } );
+            }
+
+            //note: this block is only supported by dojo 1.7+
+            var uid = undefined;
+            if(node.__gfxObject__) {
+                //SVG                
+                uid = node.__gfxObject__;                
+            } else if(node.getUID) {
+                //Canvas
+                uid = node.getUID();
+            } else if(node.tag) {
+                //silverlight
+                uid = node.tag;
+            }
+
+            if(uid) {
+                var dojox = DojoAccess._dojox(context);
+                var s = dojox.gfx.shape.byId(uid);
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO ACCESSOR GFX - getShapeFromNode returning shape based on UID", { uid: uid, shape: s } );
+                }
+                return s;
+            }
+            
+
+            //ok , we couldn't find the specific shape . Let's find the parent surface then
+            //this code is typically executed with dojo versions < 1.7
+
+            if('ownerSVGElement' in origNode) {
+                //svg specific
+                origNode = (origNode.ownerSVGElement == null) ? origNode : origNode.ownerSVGElement;
+            }
+            //default impl: just look for the parent surface
+            for (var i = context.dojo.gfxSurfaces.length - 1; i >= 0; i--) {
+                if(context.dojo.gfxSurfaces[i].rawNode == origNode) {
+                    return context.dojo.gfxSurfaces[i];
+                }
+            };
+            
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO ACCESSOR GFX - getShapeFromNode THERE WERE NO MATCHES", { surfaces: context.dojo.gfxSurfaces, node: origNode } );
+            }
+                        
+            return undefined;                
+        },
+
+
+        /*boolean*/areTheSameGfxObjects: function(obj1, obj2, context) {
+            //TODO I'm not quite sure if this method is needed at all
+
+            var dojox = DojoAccess._dojox(context);
+            if(this.isGfxObject(obj1, context) && !this.isGfxObject(obj2, context)) {
+                return false;
+            }
+            //if they are both surfaces , let compare surfaces!
+            if(this.isGfxSurface(obj1, context) && this.isGfxSurface(obj2, context)) {
+                var res = this._getInternalKey(obj1, context) == this._getInternalKey(obj2, context);
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO GFX - areTheSameGfxObjects comparing SURFACES", { obj1: obj1, obj2: obj2, internalKey1: obj1[this.GFX_INTERNAL_KEY],  internalKey2: obj2[this.GFX_INTERNAL_KEY], result: res } );
+                }
+                return res;
+            }
+
+            //if they are both shapes , let compare shapes!
+            if(this.isGfxShape(obj1, context) && this.isGfxShape(obj2, context)) {                            
+                var res = this._getInternalKey(obj1, context) == this._getInternalKey(obj2, context);   
+                if(FBTrace.DBG_DOJO_DBG) {
+                   FBTrace.sysout("DOJO GFX - areTheSameGfxObjects comparing SHAPES", { obj1: obj1, obj2: obj2, internalKey1: obj1[this.GFX_INTERNAL_KEY],  internalKey2: obj2[this.GFX_INTERNAL_KEY], result: res } );
+                }
+                return res;
+            }
+
+            return false;
+        },
+        
+        GFX_INTERNAL_KEY: "z_dojo_extension_gfx_key",
+        /*int*/_getInternalKey: function(gfxObject, context) {
+            if(!context.dojo.gfxUniqueKeyValue) {
+                context.dojo.gfxUniqueKeyValue = 1;
+            }
+            
+            gfxObject = Wrapper.unwrapObject(gfxObject);
+
+            
+            if(this.GFX_INTERNAL_KEY in gfxObject) {
+                return gfxObject[this.GFX_INTERNAL_KEY];
+            } else {
+                var hashcode = context.dojo.gfxUniqueKeyValue++;
+                try {
+                    if(Object.defineProperty) {
+                       Object.defineProperty(gfxObject, this.GFX_INTERNAL_KEY, 
+                               {value: hashcode, writable : false, enumerable : false, configurable : true});
+                   } else {
+                       //traditional way..
+                       obj[this.GFX_INTERNAL_KEY] = hashcode;
+                   }                   
+                   return hashcode;                   
+               } catch (exc) {
+                   if(FBTrace.DBG_DOJO) {
+                       FBTrace.sysout("DOJO ERROR while injecting key in GFX object", exc);
+                   }
+                   throw exc;
+               }                            
+            }
+
+        },
+
+        /*[Shape]*/getChildrenShapes: function(shape, context) {
+            if(!shape.children) {
+                return [];
+            }
+
+            return shape.children;
+        },
+
+        getParentChain: function(shape, surfaceRoots, context) {
+            if(!shape) { return []; }
+            var res = [];
+            var p = shape;
+            while( p != undefined ) {
+                res.push(p);
+                p = p.parent;
+            }
+            return res.reverse();
+        },
+
+        /*string*/getShapeType: function(shape, context) {
+            //return this._getDeclaredClassName(shape);
+            return shape.type;
+        },
+
+        trackGFXSurface: function(elem, context) {
+            var dojox = DojoAccess._dojox(context);
+            if(!elem.isInstanceOf(dojox.gfx.shape.Surface)) {
+                return;
+            }
+
+            if(!context.dojo.gfxSurfaces) {
+                context.dojo.gfxSurfaces = [];
+            }            
+            context.dojo.gfxSurfaces.push(elem);
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("TRACKED!: ", elem);
+            }
+        },
+        
+        untrackGFXSurface: function(surface, context) {
+            context.dojo.gfxSurfaces.remove(surface);
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("UNTRACKED!: ", surface);
+            }
+        },
+
+        hasSurfaces: function(context) {
+            return context.dojo.gfxSurfaces && context.dojo.gfxSurfaces.length > 0;
+        },
+        /*array*/getShapeRoots: function(/*fbug context*/ context) {            
+           return context.dojo.gfxSurfaces || [];
+        },
+
+        addGFXListener: function(listener, context) {
+            if(!context.dojo.gfxListeners) {
+                context.dojo.gfxListeners = [];    
+            }
+            context.dojo.gfxListeners.push(listener);
+        },
+        removeGFXListener: function(listener, context) {
+            if(!context.dojo.gfxListeners) {
+                context.dojo.gfxListeners = [];    
+            }
+            context.dojo.gfxListeners.remove(listener);
+        },
+
+        gfxContainerStructureModified:function(container, context) {
+            Events.dispatch(context.dojo.gfxListeners, "gfxStructureUpdated", [container, context]);
+        },
+
+        /**
+         * @return an object with the specific properties to display.
+         */
+        getGfxShapeProperties: function(shape, context) {
+            //FIXME implement!
+            var props = { 
+                'rawNode': shape.rawNode,
+                'shape': shape.shape,
+                'matrix': shape.matrix,
+                'fillStyle': shape.fillStyle,
+                'strokeStyle': shape.strokeStyle,
+                'bbox': shape.bbox,
+                'parent': shape.parent,
+                'parentMatrix': shape.parentMatrix                
+            };
+            if(shape.fontStyle) {
+                props.fontStyle = shape.fontStyle;
+            }
+            if(shape.children) {
+                props.children = shape.children;
+            }
+            return props;
+        },
+
+        getGfxSurfaceProperties: function(s, context) {
+            var props = this.getGfxShapeProperties(s, context);
+            if(s._parent) {
+                props._parent = s._parent;
+            }
+            props._nodes = s._nodes;
+            props._events = s._events;
+            return props;
         }
+
+
 
 };
 

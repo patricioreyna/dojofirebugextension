@@ -30,7 +30,7 @@ define([
     // **************************************************************************************
 
     DojoPanels.mainPanelName = "dojofirebugextension";
-    
+    DojoPanels.gfxMainPanelName = "dojofirebugextension_GFX";
 
     var $STR = DojoPanels.$STR = function(key) {
         return UI.$STR(key);    
@@ -382,7 +382,6 @@ var DojoPanelMixin =  {
 
 
 var ActivablePanelPlusMixin = Obj.extend(Firebug.ActivablePanel, DojoPanelMixin);
-
 
 var SimplePanelPlusMixin = Obj.extend(Firebug.Panel, DojoPanelMixin);
 SimplePanelPlusMixin = Obj.extend(SimplePanelPlusMixin, {

@@ -289,11 +289,19 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
      * @override
      */
     supportsObject: function(object, type) {
+        if(FBTrace.DBG_DOJO) {
+            FBTrace.sysout("DOJO MAIN - supportsObject? ", object);
+        }
+
         var context = _safeGetContext(this);
         var support = this.supportsActualObject(context, object, type);
         
         if(support == 0) {
             support = this.doesNodeBelongToWidget(context, object, type);
+        }
+
+        if(FBTrace.DBG_DOJO) {
+            FBTrace.sysout("DOJO MAIN - supportsObject result:" + support);
         }
 
         return support;
@@ -1192,8 +1200,17 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
     };
         
     
-    //methods accessible from dojo.xul 
-    Firebug.DojoExtension.ui = exportedUIMethods;    
+    //methods accessible from dojo.xul
+    if(!Firebug.DojoExtension.ui) {
+        Firebug.DojoExtension.ui = exportedUIMethods;    
+    } else {
+        for(var i in exportedUIMethods){
+            if(!(i in Firebug.DojoExtension.ui)){
+                Firebug.DojoExtension.ui[i] = exportedUIMethods[i];
+            }
+        }
+    }
+    
 
 /***********************************************************************************************************************/
     
