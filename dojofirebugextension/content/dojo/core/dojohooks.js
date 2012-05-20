@@ -60,10 +60,13 @@ define([
         var version = DojoAccess.Version.prototype.fromDojoVersion(dojoVersion);
        
         var pivotDojo17 = DojoAccess.Version.prototype.fromVersionString("1.7.0");
+        var pivotDojo17RC = DojoAccess.Version.prototype.fromVersionString("1.7.0rc1");
         var pivotDojo17Beta5 = DojoAccess.Version.prototype.fromVersionString("1.7.0b5");
         var pivot17PreDojoBeta5 = DojoAccess.Version.prototype.fromVersionString("1.7.0b1");
         
         if(version.compare(pivotDojo17, /*strict comparison*/true) >= 0) {
+            impl = new DojoHooks.DojoProxiesInitializer17();
+        } if(version.compare(pivotDojo17RC, /*strict comparison*/true) >= 0) {
             impl = new DojoHooks.DojoProxiesInitializer17();
         } else if(version.compare(pivotDojo17Beta5, /*strict comparison*/true) >= 0) {
             impl = new DojoHooks.DojoProxiesInitializer17Base();

@@ -720,7 +720,7 @@ DojoAccess.DojoAccessor.prototype =
             if(!object) {
                 return false;
             }
-            return object['declaredClass'] && ('rawNode' in object) && (object['declaredClass'].indexOf("dojox.gfx") > -1);
+            return object['declaredClass'] && ('rawNode' in object);
         },
 
         /**
@@ -735,7 +735,6 @@ DojoAccess.DojoAccessor.prototype =
 
             var dojox = DojoAccess._dojox(context);
             return object.isInstanceOf(dojox.gfx.shape.Shape);
-            // return object['declaredClass'] && ('rawNode' in object) && (object['declaredClass'].indexOf("dojox.gfx") > -1) && !('whenLoaded' in object);
         },
 
         isGfxSurface: function(object, context) {
@@ -748,7 +747,6 @@ DojoAccess.DojoAccessor.prototype =
 
         doesNodeBelongToShape: function(node, context) {
             if(FBTrace.DBG_DOJO) {
-                //FBTrace.sysout("DOJO ACCESSOR GFX - doesNodeBelongToShape ", { 'node':node , 'trackedSurfaces': context.dojo.gfxSurfaces } );
                 FBTrace.sysout("DOJO ACCESSOR GFX - doesNodeBelongToShape ", node );
             }
 
@@ -1102,6 +1100,11 @@ Version.prototype = {
                 index = versionString.indexOf("b");
                 if(index > -1) {
                     v.flag = versionString.substring(index);
+                } else {
+                    index = versionString.indexOf("rc");
+                    if(index > -1) {
+                        v.flag = versionString.substring(index);
+                    }
                 }
             }
             
