@@ -720,7 +720,7 @@ DojoAccess.DojoAccessor.prototype =
             if(!object) {
                 return false;
             }
-            return object['declaredClass'] && ('rawNode' in object);
+            return object['declaredClass'] && ('rawNode' in object) && ('getEventSource' in object);
         },
 
         /**
