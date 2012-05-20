@@ -1,0 +1,10 @@
+<!ENTITY dojo.about.label "Over">
+<!ENTITY dojo.about.tooltip "Over Dojo Firebug-extensie">
+<!ENTITY dojo.connections.label "Alle verbindingen">
+<!ENTITY dojo.connections.tooltip "Alle verbindingen bekijken">
+<!ENTITY dojo.widgets.label "Alle widgets">
+<!ENTITY dojo.widgets.tooltip "Alle widgets uit het dijit-register bekijken">
+<!ENTITY dojo.subscriptions.label "Alle abonnementen">
+<!ENTITY dojo.subscriptions.tooltip "Alle abonnementen bekijken">
+<!ENTITY dojo.onAspectObservers.label "On/Aspect">
+<!ENTITY dojo.onAspectObservers.tooltip "Alle On/Aspecten bekijken">

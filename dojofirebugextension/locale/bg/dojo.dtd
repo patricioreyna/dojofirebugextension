@@ -1,0 +1,10 @@
+<!ENTITY dojo.about.label "Относно">
+<!ENTITY dojo.about.tooltip "Относно разширението на Firebug за Dojo">
+<!ENTITY dojo.connections.label "Всички връзки">
+<!ENTITY dojo.connections.tooltip "Показване на всички връзки">
+<!ENTITY dojo.widgets.label "Всички графични обекти">
+<!ENTITY dojo.widgets.tooltip "Показване на всички графични обекти в регистъра на dijit">
+<!ENTITY dojo.subscriptions.label "Всички абонаменти">
+<!ENTITY dojo.subscriptions.tooltip "Показване на всички абонаменти">
+<!ENTITY dojo.onAspectObservers.label "Аспекти">
+<!ENTITY dojo.onAspectObservers.tooltip "Показване на всички функции прикачени чрез аспекти">

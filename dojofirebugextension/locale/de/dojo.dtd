@@ -1,0 +1,10 @@
+<!ENTITY dojo.about.label "Über">
+<!ENTITY dojo.about.tooltip "Über Dojo Firebug Extension">
+<!ENTITY dojo.connections.label "Alle Verbindungen">
+<!ENTITY dojo.connections.tooltip "Alle Verbindungen anzeigen">
+<!ENTITY dojo.widgets.label "Alle Widgets">
+<!ENTITY dojo.widgets.tooltip "Alle Widgets der dijit Registrierung anzeigen">
+<!ENTITY dojo.subscriptions.label "Alle Ereignisbehandlungen">
+<!ENTITY dojo.subscriptions.tooltip "Alle Ereignisbehandlungen anzeigen">
+<!ENTITY dojo.onAspectObservers.label "On/Aspect">
+<!ENTITY dojo.onAspectObservers.tooltip "Alle on/aspects anzeigen">
