@@ -79,10 +79,10 @@ GfxInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
         if(this.supportsObject(shape)) {
             var context = DojoPanels._safeGetContext(this);
             var dojoAccessor = DojoPanels.getDojoAccessor(context);
-            var dojox = DojoAccess._dojox(context);
+            var renderer = dojoAccessor.getRenderer(context);
             var surfaceProps = dojoAccessor.getGfxSurfaceProperties(shape, context);
         
-            var objectToDisplay = { renderer: dojox.gfx.renderer, surface: surfaceProps };
+            var objectToDisplay = { 'renderer': renderer, 'surface': surfaceProps };
             Firebug.DOMPanel.DirTable.tag.replace( { object: objectToDisplay }, this.panelNode);
         } else {
             MessageBox.Messages.infoTag.replace({object: DojoPanels.$STR('warning.objectIsNotASurface')}, this.panelNode);

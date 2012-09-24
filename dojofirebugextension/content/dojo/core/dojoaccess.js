@@ -41,38 +41,49 @@ define([
     //     if(require.aliases)
     // };
 
-    // _getRequireJS = function(context) {
-    //     if(!context.window) {
-    //         return null;
-    //     }
-    //     return Wrapper.unwrapObject(context.window).require || null;
-    // };
+    var _getRequireJS = DojoAccess._getRequireJS = function(context) {
+        if(!context.window) {
+            return null;
+        }
+        return Wrapper.unwrapObject(context.window).require || null;
+    };
 
-    // /**
-    //  *  get an AMD module
-    //  *  returns the module (or null if module not available)
-    //  */
-    // _getModule = function(moduleName, context) {
-    //     //UNSECURE
-    //     if(!context.window) {
-    //         return null;
-    //     }
+    /**
+     *  get an AMD module
+     *  returns the module (or null if module not available)
+     */
+    var _getModule = DojoAccess._getModule = function(moduleName, context) {
+        //UNSECURE
+        if(!context.window) {
+            return null;
+        }
 
-    //     var require = _getRequireJS(context);
-    //     if(!require) {
-    //         return null;
-    //     }
+        var require = _getRequireJS(context);
+        if(!require || !require.modules) {
+            return null;
+        }
 
-    //     var module = require.modules[moduleName];
-    //     var res;
-    //     if(module && module.executed && (module.executed == 'executed' || module.executed.value == 'executed')) {
-    //         res = module.result;
-    //     } else {
-    //         res = null;
-    //     }
+        var module = require.modules[moduleName];
+        var res;
+        if(module && module.executed && (module.executed == 'executed' || module.executed.value == 'executed')) {
+            if(moduleName.indexOf("shape") > -1) {
+                if(FBTrace.DBG_DOJO_DBG) {
+                    FBTrace.sysout("DOJO GFX module: REQUESTED GOT!");
+                }            
+            }
+            res = module.result;
+        } else {
+            res = null;
+        }
 
-    //     return res;
-    // };
+        if(moduleName.indexOf("shape") > -1) {
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("DOJO GFX module: REQUESTED", [module, res]);
+            }            
+        }
+
+        return res;
+    };
 
     //FIXME: This way of access objects is unsecure. Decouple communication with page and implement a secure mechanism.
     var _dojo = DojoAccess._dojo = function(context) {
@@ -171,15 +182,22 @@ define([
     //factory method
     var _createDojoAccessor = function(context) {
         var dojo = _dojo(context);
-        if(!dojo) {
+        var req = _getRequireJS(context);
+        if(!req && !dojo) {
             return;
         }
-        var version = Version.prototype.fromDojoVersion(dojo.version);        
-        if(version.compare(Version.prototype.fromVersionString("1.7")) >= 0) {
+
+        if(req && req.async) {
             return new DojoAccess.DojoAccessor17();
-        } else {
-            return new DojoAccess.DojoAccessor();
-        }        
+        } else if(dojo) {
+            var version = Version.prototype.fromDojoVersion(dojo.version);        
+            if(version.compare(Version.prototype.fromVersionString("1.7")) >= 0) {
+                return new DojoAccess.DojoAccessor17();
+            } else {
+                return new DojoAccess.DojoAccessor();
+            }            
+        }
+
     };
         
     
@@ -284,12 +302,17 @@ DojoAccess.DojoAccessor.prototype =
             return (_dojo(context).subscribe._listeners) ? 1 : 0;
         },
         
-        /*int*/getDijitRegistrySize: function(context) {
+        /* returns dijit registry or null */
+        getDijitRegistry: function(context) {
             var dijit = _dijit(context);
             if(!dijit) {
-                return 0;
+                return null;
             }
-            var reg = dijit.registry;
+            return dijit.registry;
+        },
+
+        /*int*/getDijitRegistrySize: function(context) {
+            var reg = this.getDijitRegistry(context);
             if(!reg) {
                 return 0;
             }
@@ -348,19 +371,23 @@ DojoAccess.DojoAccessor.prototype =
          * @return array
          */
         /*array*/findWidgets: function(/*DomNode*/widget, /*fbug context*/ context) {
-            var dijit = _dijit(context);
-            if(!dijit) {
+            if(!widget) {
                 return [];
             }
+            var registry = this.getDijitRegistry(context);
 
-            if(!dijit.registry) {
-                return [];
-            }
-
-            if(dijit.findWidgets) {
-                return dijit.findWidgets(widget);
+            if(registry && registry.findWidgets) {
+                return registry.findWidgets(widget);
             } else {
-                return this._findWidgetsImpl(widget, dijit); 
+                var dijit = _dijit(context); 
+                if(!dijit) {
+                    return [];
+                }                
+                if(dijit.findWidgets) {
+                    return dijit.findWidgets(widget);
+                } else {
+                    return this._findWidgetsImpl(widget, dijit); 
+                }                
             }
         },
 
@@ -403,11 +430,8 @@ DojoAccess.DojoAccessor.prototype =
          */
         /*array*/getWidgets: function(/*fbug context*/ context, /*function?*/filter) {            
             //2nd impl : based on dijit.registry (this should include all widgets, and not only attached)
-            var dijit = _dijit(context);
-            if(!dijit) {
-                return [];
-            }
-            var registry = dijit.registry; //UNSECURE
+
+            var registry = this.getDijitRegistry(context);
             if(!registry) {
                 return [];
             }
@@ -487,27 +511,34 @@ DojoAccess.DojoAccessor.prototype =
          * @return Widget|null
          */
         /*Widget*/getEnclosingWidget: function(/*fbug context*/ context, /*HTMLNode*/ node) {
-
-            var dijit = _dijit(context);
-            if(!dijit || !dijit.getEnclosingWidget) {
+            var registry = this.getDijitRegistry(context);
+            if(!registry) {
+                registry = _dijit(context);                
+            }
+            if(!registry || !registry.getEnclosingWidget) {
                 return null;
             }
 
+
             var unwrappedNode = Wrapper.unwrapObject(node);
-            return dijit.getEnclosingWidget(unwrappedNode);                    
+            return registry.getEnclosingWidget(unwrappedNode);                    
         },
         
         /*array*/getWidgetsExpandedPathToPageRoot: function(/*dijit*/widget, context) {
-            var dijit = _dijit(context);
-            if(!dijit || !dijit.getEnclosingWidget) {
+            var registry = this.getDijitRegistry(context);
+            if(!registry) {
+                registry = _dijit(context);                
+            }
+            if(!registry || !registry.getEnclosingWidget) {
                 return [];
             }
+
 
             var res = [];
             var current = widget;
             while(current != null) {
                 res.push(current);
-                current = dijit.getEnclosingWidget(current.domNode.parentNode);
+                current = registry.getEnclosingWidget(current.domNode.parentNode);
             }            
             return res.reverse();
         },
@@ -518,8 +549,6 @@ DojoAccess.DojoAccessor.prototype =
          * @return an object with the specific widget properties.
          */
         /*Object*/getSpecificWidgetProperties: function(widget, context) {
-            var dojo = _dojo(context);            
-            var dijit = _dijit(context);            
             var props = {};
             var self = this;
             
@@ -558,10 +587,11 @@ DojoAccess.DojoAccessor.prototype =
                 props['startup invoked'] = widget._started;
             }
             
-            
-            if(widget.attributeMap && widget.attributeMap != dijit._Widget.prototype.attributeMap) {
-                props['attributeMap'] = widget.attributeMap;
-            }
+            //FIXME re-enable attributeMap support for widgets.            
+            // var dijit = _dijit(context);            
+            // if(widget.attributeMap && widget.attributeMap != dijit._Widget.prototype.attributeMap) {
+            //     props['attributeMap'] = widget.attributeMap;
+            // }
             
             /* Declared Class */
             props['declaredClass'] = widget['declaredClass'];
@@ -723,6 +753,59 @@ DojoAccess.DojoAccessor.prototype =
             return object['declaredClass'] && ('rawNode' in object) && ('getEventSource' in object);
         },
 
+        getRenderer: function(context) {
+            var gfxModule = this.getGfxModule(context);
+            if(gfxModule) {
+                return gfxModule.renderer;
+            }
+            return null;
+        },
+
+        getGfxModule: function(context) {
+            var gfxModule = _getModule("dojox/gfx", context);            
+            if(gfxModule) {
+                return gfxModule;
+            } else {
+                var dojox = DojoAccess._dojox(context);
+                if(!dojox) {
+                    return null;
+                }
+                return dojox.gfx;
+            }
+        },
+
+        getGfxShapeModule: function(context) {
+            var shapeModule = _getModule("dojox/gfx/shape", context);
+            if(!shapeModule) {
+                var dojox = DojoAccess._dojox(context);
+                try {
+                    shapeModule = dojox.gfx.shape;
+                } catch(e) {                    
+                    shapeModule = null;
+                    //nothign to do
+                }                
+            }
+            return shapeModule;            
+        },
+
+        getShapeClass: function(context) {
+            var shapeModule = this.getGfxShapeModule(context);
+            var shapeCls = undefined;
+            if(shapeModule) {
+                shapeCls = shapeModule.Shape;
+            }
+            return shapeCls;        
+        },
+
+        getSurfaceClass: function(context) {
+            var shapeModule = this.getGfxShapeModule(context);
+            var surfaceCls = undefined;
+            if(shapeModule) {
+                surfaceCls = shapeModule.Surface;
+            }
+            return surfaceCls;
+        },
+
         /**
          * returns true if the given object is a gfx shape.
          * @param object
@@ -733,16 +816,17 @@ DojoAccess.DojoAccessor.prototype =
                 return false;
             }
 
-            var dojox = DojoAccess._dojox(context);
-            return object.isInstanceOf(dojox.gfx.shape.Shape);
+            var shapeCls = this.getShapeClass(context);
+            return object.isInstanceOf(shapeCls);
         },
 
         isGfxSurface: function(object, context) {
             if(!this.isGfxObject(object, context)) {
                 return false;
-            } 
-            var dojox = DojoAccess._dojox(context);
-            return object.isInstanceOf(dojox.gfx.shape.Surface);
+            }
+
+            var surfaceCls = this.getSurfaceClass(context);             
+            return object.isInstanceOf(surfaceCls);
         },
 
         doesNodeBelongToShape: function(node, context) {
@@ -783,8 +867,10 @@ DojoAccess.DojoAccessor.prototype =
             }
 
             if(uid) {
-                var dojox = DojoAccess._dojox(context);
-                var s = dojox.gfx.shape.byId(uid);
+                var shapeModule = this.getGfxShapeModule(context);
+                var s = shapeModule.byId(uid);
+                // var dojox = DojoAccess._dojox(context);
+                // var s = dojox.gfx.shape.byId(uid);
                 if(FBTrace.DBG_DOJO_DBG) {
                     FBTrace.sysout("DOJO ACCESSOR GFX - getShapeFromNode returning shape based on UID", { uid: uid, shape: s } );
                 }
@@ -817,7 +903,6 @@ DojoAccess.DojoAccessor.prototype =
         /*boolean*/areTheSameGfxObjects: function(obj1, obj2, context) {
             //TODO I'm not quite sure if this method is needed at all
 
-            var dojox = DojoAccess._dojox(context);
             if(this.isGfxObject(obj1, context) && !this.isGfxObject(obj2, context)) {
                 return false;
             }
@@ -899,8 +984,8 @@ DojoAccess.DojoAccessor.prototype =
         },
 
         trackGFXSurface: function(elem, context) {
-            var dojox = DojoAccess._dojox(context);
-            if(!elem.isInstanceOf(dojox.gfx.shape.Surface)) {
+            var surfaceCls = this.getSurfaceClass(context);
+            if(!elem.isInstanceOf(surfaceCls)) {
                 return;
             }
 
@@ -989,6 +1074,15 @@ DojoAccess.DojoAccessor17 = function() {
 };
 DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototype, {
     
+
+    getDijitRegistry: function(context) {
+        var reg = _getModule("dijit/registry", context);
+        if(!reg) {
+            reg = DojoAccess.DojoAccessor.prototype.getDijitRegistry.apply(this, arguments);
+        }
+        return reg;
+    },
+
     /**
      * returns DojoInfo object about the current loaded dojo.
      * @return { 'version': dojo.version, 'djConfig': djConfig };
@@ -999,7 +1093,8 @@ DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototy
             return;
         }
         
-        var dojo = _dojo(context);       
+        var require = _getRequireJS(context);
+        var dojo = _getModule("dojo/_base/kernel", context) || _dojo(context);
         
         var conf = this._getConfig(context, dojo);
         dojoInfo.djConfig = {};
@@ -1017,11 +1112,12 @@ DojoAccess.DojoAccessor17.prototype = Obj.extend(DojoAccess.DojoAccessor.prototy
         dojoInfo.djConfig.isAsync = dojo.isAsync;
         delete dojoInfo.djConfig.async;
                
-        var require = Wrapper.unwrapObject(context.window).require;
+        // var require = Wrapper.unwrapObject(context.window).require;
         dojoInfo.djConfig.baseUrl = require.baseUrl || dojo.config.baseUrl;
         dojoInfo.djConfig.paths = require.paths;
         dojoInfo.djConfig.modules = require.modules;
         dojoInfo.djConfig.require = require;
+        dojoInfo.djConfig.aliases = require.aliases;
         
         //has
         dojoInfo.djConfig['has.cache'] = require.has.cache;

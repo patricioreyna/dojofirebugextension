@@ -189,7 +189,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         }
     },
 
-    //fbug 1.8 compatible
+    //fbug 1.8/1.9 compatible
     /**
      * called on each dojo file loaded (actually for every file).
      * This way, we can detect when dojo.js is loaded and take action. 
@@ -204,19 +204,23 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
                FBTrace.sysout("onCompilationUnit: " + href);
            }
            
-           
+           var require = DojoAccess._getRequireJS(context);
            var dojo = DojoAccess._dojo(context);
            var dojoAccessor = getDojoAccessor(context);
            var dojoDebugger = getDojoDebugger(context);
+
+           if(FBTrace.DBG_DOJO_DBG) {
+               FBTrace.sysout("onCompilationUnit methdo: req:" + require + ". dojo: " + dojo, require);
+           }
            
-           if (dojo) {
-               var startupHooks = DojoHooks.getImpl(context, dojo.version);
+           if ((require && require.async) || dojo) {
+               var startupHooks = DojoHooks.getImpl(context, dojo && dojo.version);
                try {
                    startupHooks.onCompilationUnit(context, url, kind, dojo, context.objectMethodProxier, dojoAccessor, dojoDebugger, context.tracker);
                } catch (error) {
                    if(FBTrace.DBG_DOJO) {
                        FBTrace.sysout(error);
-                   }                   
+                   }
                }
            }
                                          

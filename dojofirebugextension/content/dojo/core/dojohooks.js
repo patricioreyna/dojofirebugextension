@@ -57,26 +57,34 @@ define([
         try {
         
         var impl;
-        var version = DojoAccess.Version.prototype.fromDojoVersion(dojoVersion);
-       
-        var pivotDojo17 = DojoAccess.Version.prototype.fromVersionString("1.7.0");
-        var pivotDojo17RC = DojoAccess.Version.prototype.fromVersionString("1.7.0rc1");
-        var pivotDojo17Beta5 = DojoAccess.Version.prototype.fromVersionString("1.7.0b5");
-        var pivot17PreDojoBeta5 = DojoAccess.Version.prototype.fromVersionString("1.7.0b1");
+        var req = DojoAccess._getRequireJS(context);
         
-        if(version.compare(pivotDojo17, /*strict comparison*/true) >= 0) {
+        if(req && req.async) {
             impl = new DojoHooks.DojoProxiesInitializer17();
-        } if(version.compare(pivotDojo17RC, /*strict comparison*/true) >= 0) {
-            impl = new DojoHooks.DojoProxiesInitializer17();
-        } else if(version.compare(pivotDojo17Beta5, /*strict comparison*/true) >= 0) {
-            impl = new DojoHooks.DojoProxiesInitializer17Base();
-        } else if(version.compare(pivot17PreDojoBeta5, /*strict comparison*/true) >= 0) {
-            impl = new DojoHooks.DojoProxiesInitializer17PreBeta5();
-        } else {
-            //older dojo versions (<= 1.6.x)
-            impl = new DojoHooks.DojoProxiesInitializer();
-        }
 
+        } else { 
+
+            var version = DojoAccess.Version.prototype.fromDojoVersion(dojoVersion);
+           
+            var pivotDojo17 = DojoAccess.Version.prototype.fromVersionString("1.7.0");
+            var pivotDojo17RC = DojoAccess.Version.prototype.fromVersionString("1.7.0rc1");
+            var pivotDojo17Beta5 = DojoAccess.Version.prototype.fromVersionString("1.7.0b5");
+            var pivot17PreDojoBeta5 = DojoAccess.Version.prototype.fromVersionString("1.7.0b1");
+            
+            
+            if(version.compare(pivotDojo17, /*strict comparison*/true) >= 0) {
+                impl = new DojoHooks.DojoProxiesInitializer17();
+            } if(version.compare(pivotDojo17RC, /*strict comparison*/true) >= 0) {
+                impl = new DojoHooks.DojoProxiesInitializer17();
+            } else if(version.compare(pivotDojo17Beta5, /*strict comparison*/true) >= 0) {
+                impl = new DojoHooks.DojoProxiesInitializer17Base();
+            } else if(version.compare(pivot17PreDojoBeta5, /*strict comparison*/true) >= 0) {
+                impl = new DojoHooks.DojoProxiesInitializer17PreBeta5();
+            } else {
+                //older dojo versions (<= 1.6.x)
+                impl = new DojoHooks.DojoProxiesInitializer();
+            }
+        }
         } catch(e) {
             if(FBTrace.DBG_DOJO) {
                 FBTrace.sysout(e);
@@ -543,24 +551,11 @@ define([
         },
                 
         _getModule: function(context, moduleName) {
-            var require = Wrapper.unwrapObject(context.window).require;
-            var module = require.modules[moduleName];
-            var res;
-            if(module && module.executed && (module.executed == 'executed' || module.executed.value == 'executed')) {
-                res = module.result;
-            } else {
-                res = undefined;
+            if(FBTrace.DBG_DOJO) {
+                FBTrace.sysout("_getModule: " + moduleName);
             }
 
-            if(FBTrace.DBG_DOJO_DBG) {
-                FBTrace.sysout("DOJO HOOKS GETMODULE", { modname: moduleName, module: module, result: res } );
-                if(module) {
-                    FBTrace.sysout("DOJO HOOKS GETMODULE MORE INFO", { modname: moduleName, modExecuted: module.executed, modResult: module.result } );    
-                }                
-            }
-
-            return res;
-
+            return DojoAccess._getModule(moduleName, context);
         },     
         
         _getWidgetBaseModule: function(context) {
@@ -789,30 +784,109 @@ define([
             FBTrace.sysout("DOJO DojoProxiesInitializer for dojo 1.7 created");
         }
         this.stackDepthForDojoValueHolder = { value: 2 };
+        this.waitingModules = {}; //map of (mid, moduleExecutedCallback)
+        this.requireListener = null;
     };
     DojoHooks.DojoProxiesInitializer17.prototype = Obj.extend(DojoHooks.DojoProxiesInitializer17Base.prototype, {
-       
-        injectProxies: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
 
-            if (dojo) {
 
-                this.injectProxiesToOnAspectModules(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
-                this.injectProxiesToTopicModule(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);                
-                this.injectProxiesConnectModule(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
-                this.injectProxiesDojoGlobal(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+        _getModule: function(context, moduleName, moduleExecutedCallback) {
+            /*
+             moduleExecutedCallback function has 2 arguments: mid and module, where module will be the 'executed' module 
+             (i.e. req.modules[mid].result)
+             The moduleExecutedCallback will be invoked with "this" (dojohooks instance) as execution context
+            */
+
+            var module = DojoAccess._getModule(moduleName, context);            
+            var res = null;
+            if(module) {
+                //the module was already executed!
+                res = module.result;
+                if(moduleExecutedCallback) {
+                    moduleExecutedCallback.call(this, moduleName, module);    
+                }                
+            
+            } else if(arguments.length > 2) {
                 
-            }           
+                res = null;                
+                var w = Wrapper.unwrapObject(context.window);
+                
+                //register callback            
+                if(!this.waitingModules[moduleName]) {
+                    //UNSECURE  
+                    if(FBTrace.DBG_DOJO) {
+                        FBTrace.sysout("ASYNC LOAD REQUEST for:" + moduleName + " " + moduleExecutedCallback, moduleExecutedCallback);
+                    }
+
+                    this.waitingModules[moduleName] = moduleExecutedCallback;
+                }
+
+                //initialize our require listener (if not initialized already)
+                if(!this.requireListener) {
+
+                    var self = this;
+                    var require = DojoAccess._getRequireJS(context);            
+                    
+                    var listener = (function() {
+                        //var callback = moduleExecutedCallback; 
+                        return function(type, mid) {
+                            if(type != "loader-finish-exec") {
+                                return;
+                            }                    
+                            if(self.waitingModules[mid]) {
+                                //we were waiting for this module to be executed!
+                                
+                                var callback = self.waitingModules[mid];
+                                if(callback) {                        
+                                    //impl note: we don't invoke DojoAccess._getModule here because it expects module.executed to be true, and at
+                                    //this point is was just executed but the executed flag not set yet.
+                                    var module = require.modules && require.modules[mid];
+                                    if(module && module.result) {
+                                        callback.call(self, mid, module.result);
+                                        self.waitingModules[mid] = "done";                                        
+                                    }
+                                }  
+                            }
+                        }
+                    })();
+
+                    listener.internalClass = "dojoext-added-code";
+                    DojoUtils._addMozillaExecutionGrants(listener);
+                    var handle = require.on("trace", listener);                        
+                    this.requireListener = listener;
+                }
+
+            }
+            return res;
+        },
+      
+        getGlobalScope: function(context) {
+            var kernel = this._getModule(context, 'dojo/_base/kernel');
+            if(!kernel) {
+                kernel = DojoAccess._dojo(context);
+            }
+            return kernel && kernel.global;
+        },
+
+        injectProxies: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+            // if(FBTrace.DBG_DOJO) {
+            //     FBTrace.sysout("DOJO DojoProxiesInitializer17 inject proxies called");
+            // }
+
+            this.injectProxiesToOnAspectModules(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+            this.injectProxiesToTopicModule(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);                
+            this.injectProxiesConnectModule(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+            this.injectProxiesDojoGlobal(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);            
 
             //let's wrap _WidgetBase functions (connect, subscribe..) as well ..
-            this.injectProxiesWidgetBase(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
-            this.checkWidgetModuleLoaded(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);            
+            this.injectProxiesWidgetBase(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+            this.checkWidgetModuleLoaded(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);            
 
             //trace
             this._fbTraceConnectionsNotTracked(context);
 
-
             //GFX hooks!
-            this.injectProxiesGFX(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
+            this.injectProxiesGFX(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker);
         },
 
         /**
@@ -842,7 +916,7 @@ define([
                 FBTrace.sysout("injecting wrappers to dojo global if needed....");
             }
 
-            if(context.dojoGlobalWrapped || !dojo.connect) {
+            if(context.dojoGlobalWrapped || !dojo || !dojo.connect) {
                 return;
             }
             context.dojoGlobalWrapped = true;
@@ -851,49 +925,52 @@ define([
                 FBTrace.sysout("injecting wrappers to dojo global");
             }
             // hook on dojo's connect
-            this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, dojo, "connect", "connectG", this.stackDepthForDojoValueHolder, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-            this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, dojo, "subscribe", "subsG", this.stackDepthForDojoValueHolder, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));            
+            this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, dojo, "connect", "connectG", this.stackDepthForDojoValueHolder, this._proxyConnect(context, dojoAccess, dojoDebugger, dojoTracker));
+            this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, dojo, "subscribe", "subsG", this.stackDepthForDojoValueHolder, this._proxySubscribe(context, dojoAccess, dojoDebugger, dojoTracker));            
         },
     
-        injectProxiesConnectModule: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+        injectProxiesConnectModule: function(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
 
-            var connectModule = this._getModule(context, 'dojo/_base/connect');
-            
-            if(!context.connectModuleWrapped && connectModule) {
-                context.connectModuleWrapped = true;
+            this._getModule(context, 'dojo/_base/connect', function(mid, connectModule) {
 
-                if(FBTrace.DBG_DOJO) {
-                    FBTrace.sysout("injecting wrappers to connect module....");
+                if(!context.connectModuleWrapped && connectModule) {
+                    context.connectModuleWrapped = true;
+
+                    if(FBTrace.DBG_DOJO) {
+                        FBTrace.sysout("injecting wrappers to connect module....", arguments);
+                    }
+
+                    this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, connectModule, "connect", "connectM", this.stackDepthForDojoValueHolder, this._proxyConnect(context, dojoAccess, dojoDebugger, dojoTracker));
+                    this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, connectModule, "subscribe", "subsM", this.stackDepthForDojoValueHolder, this._proxySubscribe(context, dojoAccess, dojoDebugger, dojoTracker));
                 }
-
-                this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, connectModule, "connect", "connectM", this.stackDepthForDojoValueHolder, this._proxyConnect(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-                this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, connectModule, "subscribe", "subsM", this.stackDepthForDojoValueHolder, this._proxySubscribe(context, dojo, dojoAccess, dojoDebugger, dojoTracker));                
-                
-            }
+            });            
         },
 
-        _createProxy: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, module, originalFnName, fnDisplayName, callerStackDepth, postFn) {
+        _createProxy: function(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, module, originalFnName, fnDisplayName, callerStackDepth, postFn) {
 
-            proxyFactory.proxyFunction(context, module, originalFnName, this._proxyPreExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker, callerStackDepth, true, fnDisplayName), this._postFunctionExecutor(context, dojoTracker, postFn));
+            proxyFactory.proxyFunction(context, module, originalFnName, this._proxyPreExec(context, dojoAccess, dojoDebugger, dojoTracker, callerStackDepth, true, fnDisplayName), this._postFunctionExecutor(context, dojoTracker, postFn));
         },
         
-        injectProxiesToOnAspectModules: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
-            
-            var mod = this._getModule(context, 'dojo/aspect');
-            
-            if(!context.aspectModuleWrapped && mod) {
-                context.aspectModuleWrapped = true;
-            
-                //after(target, methodName, advice, receiveArguments){}
-                if(FBTrace.DBG_DOJO) {
-                    FBTrace.sysout("injecting wrappers to module: dojo/aspect");
-                }
+        injectProxiesToOnAspectModules: function(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {                
 
-                this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "before", "before", 2, this._proxyAspect("before", context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-                this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "after", "after", 2, this._proxyAspect("after", context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-                this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "around", "around", 2, this._proxyAspect("around", context, dojo, dojoAccess, dojoDebugger, dojoTracker));                
-            }
+                this._getModule(context, 'dojo/aspect', function(mid, mod) {
 
+                    if(!context.aspectModuleWrapped && mod) {
+                        context.aspectModuleWrapped = true;
+                    
+                        //after(target, methodName, advice, receiveArguments){}
+                        if(FBTrace.DBG_DOJO) {
+                            FBTrace.sysout("injecting wrappers to module: dojo/aspect", arguments);
+                        }
+
+                        this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "before", "before", 2, this._proxyAspect("before", context, dojoAccess, dojoDebugger, dojoTracker));
+                        this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "after", "after", 2, this._proxyAspect("after", context, dojoAccess, dojoDebugger, dojoTracker));
+                        this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "around", "around", 2, this._proxyAspect("around", context, dojoAccess, dojoDebugger, dojoTracker));                
+                    }
+
+                });
+
+        
             //on = function(target, type, listener, dontFix){...}
             //on.parse = function(target, type, listener, addListener, dontFix, matchesTarget){...}
             
@@ -905,67 +982,76 @@ define([
              * 
              * OJO que se puede dar la secuencia "on.parse -> ... -> on.parse " (a mi me interesa "trackear" cuando "type" sea un string)
              */
-            var mod = this._getModule(context, 'dojo/on');
 
-            if(!context.onModuleWrapped && mod) {
-                context.onModuleWrapped = true;
 
-                if(FBTrace.DBG_DOJO) {
-                    FBTrace.sysout("injecting wrappers to module: dojo/on");
-                }
+                this._getModule(context, 'dojo/on', function(mid, mod) {
 
-                //in this case we don't use _createProxy function because we need different parameters
-                proxyFactory.proxyFunction(context, mod, "parse", this._proxyPreExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker, 3, false, "on.parse"), this._postFunctionExecutor(context, dojoTracker, this._proxyOnParsePostExec(context, dojo, dojoAccess, dojoDebugger, dojoTracker), this.EXECUTE.ALWAYS));
-            }
+                    if(!context.onModuleWrapped && mod) {
+                        context.onModuleWrapped = true;
+
+                        if(FBTrace.DBG_DOJO) {
+                            FBTrace.sysout("injecting wrappers to module: dojo/on", arguments);
+                        }
+
+                        //in this case we don't use _createProxy function because we need different parameters
+                        proxyFactory.proxyFunction(context, mod, "parse", this._proxyPreExec(context, dojoAccess, dojoDebugger, dojoTracker, 3, false, "on.parse"), this._postFunctionExecutor(context, dojoTracker, this._proxyOnParsePostExec(context, dojoAccess, dojoDebugger, dojoTracker), this.EXECUTE.ALWAYS));
+                    }
+                });
+
+
         },
         
-        injectProxiesToTopicModule: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+        injectProxiesToTopicModule: function(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
             
-            var mod = this._getModule(context, 'dojo/topic');
-            if(!context.topicModuleWrapped && mod) {
-                context.topicModuleWrapped = true;
+            this._getModule(context, 'dojo/topic', function(mid, mod) {
+                if(!context.topicModuleWrapped && mod) {
+                    context.topicModuleWrapped = true;
 
-                if(FBTrace.DBG_DOJO) {
-                    FBTrace.sysout("injecting wrappers to module: dojo/topic");
-                }
-                
-                this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "subscribe", "topic.sub", 2, this._proxySubscribeTopicModule(context, dojo, dojoAccess, dojoDebugger, dojoTracker));    
-            }
+                    if(FBTrace.DBG_DOJO) {
+                        FBTrace.sysout("injecting wrappers to module: dojo/topic", arguments);
+                    }
+                    
+                    this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "subscribe", "topic.sub", 2, this._proxySubscribeTopicModule(context, dojoAccess, dojoDebugger, dojoTracker));
+                }                
+            });
          
         },
 
-        injectProxiesWidgetBase: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+        injectProxiesWidgetBase: function(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
             
-            var widgetBaseModule = this._getWidgetBaseModule(context);            
-            if(!context.widgetBaseModuleWrapped && widgetBaseModule) {
-                context.widgetBaseModuleWrapped = true;
-                
-                if(FBTrace.DBG_DOJO) {
-                    FBTrace.sysout("about to wrap dijit._WidgetBase");
-                }
-
-                try {
-                    var mod = widgetBaseModule.prototype;
+            this._getModule(context, 'dijit/_WidgetBase', function(mid, widgetBaseModule) {
+                if(!context.widgetBaseModuleWrapped && widgetBaseModule) {
+                    context.widgetBaseModuleWrapped = true;
                     
-                    this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "connect", "connectWB", 2, this._proxyConnectWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker));
-                    this._createProxy(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "subscribe", "subsWB", 2, this._proxySubscribeWidgetBase(context, dojo, dojoAccess, dojoDebugger, dojoTracker));                    
-
                     if(FBTrace.DBG_DOJO) {
-                        FBTrace.sysout("_WidgetBase wrapped successfully");
+                        FBTrace.sysout("about to wrap dijit._WidgetBase", arguments);
                     }
 
-                    //trace
-                    this._fbTraceConnectionsNotTracked(context);
+                    try {
+                        var mod = widgetBaseModule.prototype;
+                        
+                        this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "connect", "connectWB", 2, this._proxyConnectWidgetBase(context, dojoAccess, dojoDebugger, dojoTracker));
+                        this._createProxy(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker, mod, "subscribe", "subsWB", 2, this._proxySubscribeWidgetBase(context, dojoAccess, dojoDebugger, dojoTracker));                    
 
-                } catch(e) {
-                    if(FBTrace.DBG_DOJO) {
-                        FBTrace.sysout("error while trying to inject wrappers to _WidgetBase.js: ", e);
+                        if(FBTrace.DBG_DOJO) {
+                            FBTrace.sysout("_WidgetBase wrapped successfully");
+                        }
+
+                        //trace
+                        this._fbTraceConnectionsNotTracked(context);
+
+                    } catch(e) {
+                        if(FBTrace.DBG_DOJO) {
+                            FBTrace.sysout("error while trying to inject wrappers to _WidgetBase.js: ", e);
+                        }
                     }
-                }
-            }           
+                }           
+
+            });
+
         },
 
-        checkWidgetModuleLoaded: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+        checkWidgetModuleLoaded: function(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
             
             var widgetModule = this._getModule(context, 'dijit/_Widget');            
             if(!context.widgetModuleWrapped && widgetModule) {
@@ -979,7 +1065,7 @@ define([
             }
         },
 
-        _proxyPreExec: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepth, dontTrackInOnParse, name) {
+        _proxyPreExec: function(context, dojoAccess, dojoDebugger, dojoTracker, stackDepth, dontTrackInOnParse, name) {
             
             if(FBTrace.DBG_DOJO) {
                 FBTrace.sysout("DOJO creating _proxyOnParsePreExec");
@@ -1090,15 +1176,16 @@ define([
             };
         },
 
-        _proxySubscribe: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace){            
+        _proxySubscribe: function(context, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace){            
             if(FBTrace.DBG_DOJO) {
                 FBTrace.sysout("DOJO creating _proxySubscribe");
             }
                         
             var self = this;
-           var fn = function(ret, args) {               
+            var globalScope = this.getGlobalScope(context);
+            var fn = function(ret, args) {
                
-               //subscribe:function(topic, handlerContext, method){...}     
+                //subscribe:function(topic, handlerContext, method){...}     
 
                //FIXME[BugTicket#91]: Defensive code to avoid registering
                if (args[2] && args[2].internalClass == 'dojoext-added-code') {
@@ -1118,8 +1205,12 @@ define([
                    method = handlerContext;
                    handlerContext = null;
                }              
-               if (!handlerContext) {
-                   handlerContext = (typeof(method) == 'string') ? dojo.global : dojo;
+               if (!handlerContext) {                    
+                    // handlerContext = (typeof(method) == 'string') ? globalScope : dojo;
+                   if(FBTrace.DBG_DOJO) {                        
+                       FBTrace.sysout("DOJO DEBUG: _proxySubscribe: assigning globalScope as handlerContext value ", { 'globalScope': globalScope} );
+                   }
+                    handlerContext = globalScope;
                }
 
                dojoTracker.trackObserver(ret, new DojoModel.Subscription.prototype.createSubscription(topic, handlerContext, method, (context.dojoextProxyChain_InfoAboutCaller || null)));
@@ -1134,7 +1225,7 @@ define([
           return fn;
        },
        
-       _proxySubscribeTopicModule : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace){
+       _proxySubscribeTopicModule : function(context, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace){
 
             if(FBTrace.DBG_DOJO) {
                 FBTrace.sysout("DOJO creating proxySubscribeTopic");
@@ -1173,7 +1264,7 @@ define([
           return fn;
        },
        
-       _proxyAspect: function(aspectType, context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepth) {
+       _proxyAspect: function(aspectType, context, dojoAccess, dojoDebugger, dojoTracker, stackDepth) {
 
            if(FBTrace.DBG_DOJO) {
                FBTrace.sysout("DOJO creating proxyAspect: " + aspectType, {'dojoAccess':dojoAccess, 'dojoTracker': dojoTracker, 'dojoDebugger':dojoDebugger});
@@ -1215,7 +1306,7 @@ define([
            return fn;           
        },
        
-       _proxyOnParsePostExec: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepth) {
+       _proxyOnParsePostExec: function(context, dojoAccess, dojoDebugger, dojoTracker, stackDepth) {
 
            if(FBTrace.DBG_DOJO) {
                FBTrace.sysout("DOJO creating proxyOnParse", {'dojoAccess':dojoAccess, 'dojoTracker': dojoTracker, 'dojoDebugger':dojoDebugger});
@@ -1279,7 +1370,7 @@ define([
            return fn;
        },
        
-       _proxyConnect: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForConnectPlace) {
+       _proxyConnect: function(context, dojoAccess, dojoDebugger, dojoTracker, stackDepthForConnectPlace) {
 
            if(FBTrace.DBG_DOJO) {
                FBTrace.sysout("DOJO creating proxyConnect", {'dojoAccess':dojoAccess, 'dojoTracker': dojoTracker, 'dojoDebugger':dojoDebugger});
@@ -1287,6 +1378,7 @@ define([
            }
 
            var self = this;
+           var globalScope = this.getGlobalScope(context);
            var fn = function(ret, args) {
                // we need to normalize arguments (copied from dojo connect)
                args = self._normalizeConnectArguments.apply(this, args);                   
@@ -1303,8 +1395,7 @@ define([
               }
        
               //context.dojoext_on_proxy_donot_track
-              
-              var obj =  Wrapper.unwrapObject(args[0] || dojo.global);            
+              var obj =  Wrapper.unwrapObject(args[0] || globalScope);            
               var event = Wrapper.unwrapObject(args[1]); //event can be a function in dojo 1.7                   
 
               /*
@@ -1321,7 +1412,7 @@ define([
                  if(method.call) {
                       handlerContext = obj;
                  } else {
-                      handlerContext = dojo.global;
+                      handlerContext = globalScope;
                  }                   
               }
               handlerContext = Wrapper.unwrapObject(handlerContext);
@@ -1339,12 +1430,13 @@ define([
            return fn;
        },
 
-       _proxyConnectWidgetBase: function(context, dojo, dojoAccess, dojoDebugger, dojoTracker) {
+       _proxyConnectWidgetBase: function(context, dojoAccess, dojoDebugger, dojoTracker) {
            if(FBTrace.DBG_DOJO) {
                FBTrace.sysout("DOJO creating _proxyConnectWidgetBase");
            }
 
            var self = this;
+           var globalScope = this.getGlobalScope(context);
            var fn = function(ret, args) {
 
                //connect: function(/*Object|null*/ obj, /*String|Function*/ event, /*String|Function*/ method){...}
@@ -1357,7 +1449,7 @@ define([
                   return ret; 
               }
        
-              var obj =  Wrapper.unwrapObject(args[0] || dojo.global);            
+              var obj =  Wrapper.unwrapObject(args[0] || globalScope);            
               var event = Wrapper.unwrapObject(args[1]); //it can be a function (dojo 1.7)
               var handlerContext = this; //the widget instance
               var method = Wrapper.unwrapObject(args[2]);
@@ -1375,7 +1467,7 @@ define([
            return fn;                 
        },
 
-       _proxySubscribeWidgetBase : function(context, dojo, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace) {
+       _proxySubscribeWidgetBase : function(context, dojoAccess, dojoDebugger, dojoTracker, stackDepthForSubPlace) {
 
            if(FBTrace.DBG_DOJO) {
                FBTrace.sysout("DOJO creating proxySubscribeWidgetBase");
@@ -1410,38 +1502,32 @@ define([
 
       /* ****************************** GFX **************************** */
   
-        injectProxiesGFX: function(context, dojo, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
+        injectProxiesGFX: function(context, proxyFactory, dojoAccess, dojoDebugger, dojoTracker) {
             
-            if (context.gfxHooked) {
-                return;
-            }
+            this._getModule(context, 'dojox/gfx/shape', function(mid, mod) {
 
-            if(FBTrace.DBG_DOJO) {
-                FBTrace.sysout("DOJO GFX entering injectProxiesGFX");
-            }
-            
-            var mod = this._getModule(context, 'dojox/gfx/shape');
-            if(!mod) {
-                return;
-            }
-            
-            context.gfxHooked = true;                
-            if(FBTrace.DBG_DOJO) {
-                FBTrace.sysout("DOJO GFX TRACKED !");
-            }
-            
+                if(!mod) {
+                    return;
+                }
 
-            if(FBTrace.DBG_DOJO) {
-                FBTrace.sysout("injecting wrappers to dojox.gfx.shape.Surface global");
-            }
+                if (context.gfxHooked) {
+                    return;
+                }
+                context.gfxHooked = true;
+                                                
+                if(FBTrace.DBG_DOJO) {
+                    FBTrace.sysout("injecting wrappers to dojox.gfx.shape.Surface global", arguments);
+                }
 
-            proxyFactory.proxyFunction(context, mod.Container, "_init", null, this._proxyGfxSurfaceConstructor(context, dojoAccess, dojoDebugger, dojoTracker));
-            proxyFactory.proxyFunction(context, mod.Surface.prototype, "destroy", this._proxyGfxSurfaceDestructor(context, dojoAccess, dojoDebugger, dojoTracker), null);
-            proxyFactory.proxyFunction(context, mod.Container, "add", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
-            proxyFactory.proxyFunction(context, mod.Container, "remove", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
-            proxyFactory.proxyFunction(context, mod.Container, "clear", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
-            proxyFactory.proxyFunction(context, mod.Container, "_moveChildToFront", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
-            proxyFactory.proxyFunction(context, mod.Container, "_moveChildToBack", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));                    
+                proxyFactory.proxyFunction(context, mod.Container, "_init", null, this._proxyGfxSurfaceConstructor(context, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, mod.Surface.prototype, "destroy", this._proxyGfxSurfaceDestructor(context, dojoAccess, dojoDebugger, dojoTracker), null);
+                proxyFactory.proxyFunction(context, mod.Container, "add", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, mod.Container, "remove", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, mod.Container, "clear", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, mod.Container, "_moveChildToFront", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));
+                proxyFactory.proxyFunction(context, mod.Container, "_moveChildToBack", null, this._proxyGfxContainerModified(context, dojoAccess, dojoDebugger, dojoTracker));                    
+
+            });
         },
 
         _proxyGfxSurfaceConstructor: function(context, dojoAccess, dojoDebugger, dojoTracker) {

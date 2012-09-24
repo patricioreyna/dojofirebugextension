@@ -125,6 +125,9 @@ define([
          * @override
          */
         proxyFunction : function(context, obj, functionToProxy, funcPreInvocation, funcPostInvocation){
+            if(FBTrace.DBG_DOJO_DBG) {
+                FBTrace.sysout("proxyFunction invoked for funcionName " + functionToProxy, [context, obj, functionToProxy, funcPreInvocation, funcPostInvocation]);
+            }
                         
             
             if (!isDojoExtProxy(obj[functionToProxy]) && !obj[functionToProxy]._listeners) {

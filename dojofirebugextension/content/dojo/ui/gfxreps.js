@@ -108,13 +108,14 @@ GfxReps.ShapeRep = domplate(FirebugReps.Obj,
 
     /*string*/getShapeTitleProperties: function(shape) {
         var context = Firebug.currentContext;
-        var dojox = DojoAccess._dojox(context);
         var type = shape.shape && shape.shape.type;
         var title = "";
         if(!type) {
             return title;
         }
-        var props = dojox.gfx['default'+this._toTitleCase(type)];
+        var dojoAccessor = DojoAccess.getImpl(context);
+        var gfx = dojoAccessor.getGfxModule(context);
+        var props = gfx['default'+this._toTitleCase(type)];
         if(props) {
             title += '{ ';
             for(var k in props) {
@@ -296,7 +297,6 @@ GfxReps.ShapesTreeRep = domplate({
  
         var i;
         for(i=0;i<array.length;i++) {
-            //if((array[i].getUID && elem.getUID && array[i].getUID() == elem.getUID()) || elem == array[i]) {
             if(dojoAccessor.areTheSameGfxObjects(elem, array[i], ctx)) {
                 return true;
             }
