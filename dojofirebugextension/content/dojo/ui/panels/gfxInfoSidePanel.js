@@ -1,5 +1,5 @@
 /* Released under BSD license (see license.txt) */
-
+ 
 
 /**
  * DojoInfo side panel
