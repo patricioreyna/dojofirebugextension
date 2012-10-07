@@ -15,8 +15,9 @@ define([
         "firebug/firebug",
         "firebug/js/stackFrame",
         "firebug/lib/css",
-        "firebug/lib/locale"
-       ], function dojoUIHelperFactory(Firebug, StackFrame, Css, Locale)
+        "firebug/lib/locale",
+        "firebug/lib/trace"
+       ], function dojoUIHelperFactory(Firebug, StackFrame, Css, Locale, FBTrace)
 {
 
     var UI = {};

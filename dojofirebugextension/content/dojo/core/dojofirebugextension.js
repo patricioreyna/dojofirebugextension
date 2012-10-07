@@ -139,6 +139,9 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
             return;
         }
         
+        //call super
+        Firebug.ActivableModule.loadedContext.apply(this, arguments);
+
         //TODO here use fbListeners to decouple from main panel
         var panel = this._getDojoPanel(context);
         
@@ -157,8 +160,7 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         }
     },
     
-    destroyContext: function(context, persistedState) {
-        Firebug.ActivableModule.destroyContext.apply(this, arguments);
+    destroyContext: function(context, persistedState) {        
   
         //destroy what we created on initContext
         context.tracker.destroy();
@@ -169,12 +171,17 @@ DojoExtension.dojofirebugextensionModel = Obj.extend(Firebug.ActivableModule,
         DojoHooks.destroyInContext(context);
         
         delete context.tracker;
+
+        //super destroy must be last sentence
+        Firebug.ActivableModule.destroyContext.apply(this, arguments);
     },
             
     /**
      * invoked whenever the user selects a tab.
      */
     showPanel: function(browser, panel) {
+        Firebug.ActivableModule.showPanel.apply(this, arguments);
+
         //(multi-process) is this code right (to be here)?
         
         // this test on name is a sign that this code belongs in panel.show()

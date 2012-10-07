@@ -13,7 +13,7 @@
  */
 define([
         "firebug/firebug",
-        "firebug/firefox/xpcom",
+        "firebug/lib/xpcom",
         "firebug/lib/css",
         "firebug/lib/json",
         "firebug/lib/locale",
@@ -130,6 +130,14 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
         
         DojoPanels.addStyleSheet(this.document);
     },
+
+    destroy: function(state) {
+        if (FBTrace.DBG_DOJO)
+            FBTrace.sysout("DOJO; Dojo mainPanel.destroy");
+
+        //super's destroy must be last sentence.
+        Firebug.ActivablePanel.destroy.apply(this, arguments);
+    },
     
     _initMessageBoxes: function(ctx) {
         // Message boxes
@@ -231,8 +239,10 @@ dojofirebugextensionPanel.prototype = Obj.extend(DojoPanels.ActivablePanelPlusMi
      * @override
      */
     show: function(state) {
-        this.showToolbarButtons("fbStatusButtons", true);
-        
+        Firebug.ActivablePanel.show.apply(this, arguments);
+
+        //show our toolbar
+        this.showToolbarButtons("fbDojo_firebugextensionButtons", true);        
         // Sync the selected toolbar button with the selected view.
         var ctx = _safeGetContext(this);
         this._setOption(ctx.dojo.mainMenuSelectedOption, ctx);

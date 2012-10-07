@@ -37,32 +37,6 @@ GfxInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
         DojoPanels.addStyleSheet(this.document);
     },
 
-    // show: function(state) {
-    //     var ctx = DojoPanels._safeGetContext(this);
-    // },
-    
-    // hide: function(state) {
-    //     var ctx = DojoPanels._safeGetContext(this);
-    // },
-        
-    // /**
-    //  * added custom method (this one) instead of updateSelection to avoid changing the contents of
-    //  * this panel when not needed.
-    //  */
-    // showInfo: function(context) {
-
-    // },
-    
-    // refresh: function() {
-    //     this.showInfo(DojoPanels._safeGetContext(this));
-    // },
-
-    // getOptionsMenuItems: function() {
-    //     return [
-    //         {label: DojoPanels.$STR('label.Refresh'), nol10n: true, command: Obj.bind(this.refresh, this) }
-    //     ];
-    // },
-
     /**
      * Returns a number indicating the view's ability to inspect the object.
      * Zero means not supported, and higher numbers indicate specificity.
