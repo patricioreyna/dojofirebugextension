@@ -1,13 +1,12 @@
 /* Released under BSD license (see license.txt) */
 
-
+ 
 /**
  * The main panel (UI) of this extension
  * @author preyna@ar.ibm.com
  */
 define([
         "firebug/firebug",
-        "firebug/firefox/xpcom",
         "firebug/lib/css",
         "firebug/lib/json",
         "firebug/lib/locale",
@@ -26,7 +25,7 @@ define([
         "dojo/ui/panels/gfxInfoSidePanel",
         "dojo/ui/panels/gfxShapePropertiesSidePanel",
         "dojo/ui/panels/panelCommons"
-       ], function gfxPanelsFactory(Firebug, Xpcom, Css, Json, Locale, Obj, Search, Str, FBTrace, DojoExtension, 
+       ], function gfxPanelsFactory(Firebug, Css, Json, Locale, Obj, Search, Str, FBTrace, DojoExtension, 
                DojoModel, DojoPrefs, Collections, GfxReps, UI, MessageBox, UiHelpers, GfxInfoSidePanel, GfxShapePropertiesSidePanel, DojoPanels)
 {
 
@@ -178,15 +177,6 @@ gfxMainPanel.prototype = Obj.extend(Firebug.ActivablePanel,
             return node;
         }
         return null;
-
-        // while (node) {
-        //     var shape = dojoAccessor.getShapeFromNode(node, context);
-        //     if (shape) {
-        //         return node;
-        //     }
-        //     node = node.parentNode;
-        // }        
-        // return null;
     },
 
     

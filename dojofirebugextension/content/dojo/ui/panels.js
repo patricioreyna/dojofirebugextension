@@ -13,8 +13,8 @@
  */
 define([
         "firebug/firebug",
-        "firebug/firefox/firefox",
-        "firebug/firefox/menu",
+        "firebug/chrome/firefox",
+        "firebug/chrome/menu",
         "firebug/lib/object",
         "firebug/lib/trace",
         "dojo/core/dojoaccess",
@@ -70,7 +70,7 @@ define([
                     FBTrace.sysout("DOJO - registering Firefox ContextMenu listener");
                 }
 
-                var contextMenu = Firefox.$("contentAreaContextMenu");
+                var contextMenu = Firebug.GlobalUI.$("contentAreaContextMenu");
                 if (contextMenu) {
                     if(!this._boundOnContentAreaContextMenuShowing) {
                         this._boundOnContentAreaContextMenuShowing = Obj.bind(this._onContentAreaContextMenuShowing, this);
@@ -88,7 +88,7 @@ define([
                     FBTrace.sysout("DOJO - unregistering Firefox ContextMenu listener");
                 }
 
-                var contextMenu = Firefox.$("contentAreaContextMenu");        
+                var contextMenu = Firebug.GlobalUI.$("contentAreaContextMenu");        
                 if (contextMenu) {
                     contextMenu.removeEventListener("popupshowing", this._boundOnContentAreaContextMenuShowing, false);
                 } 
@@ -96,7 +96,7 @@ define([
                     FBTrace.sysout("DOJO - Firefox ContextMenu listener " + ((contextMenu) ? "FOUND!" : "NOT FOUND!"));
                 }
                 
-                var inspectItem = Firefox.$("fbDojo_menu_dojofirebugextension_inspect");
+                var inspectItem = Firebug.GlobalUI.$("fbDojo_menu_dojofirebugextension_inspect");
                 if(FBTrace.DBG_DOJO_CONTEXTMENU) {
                     FBTrace.sysout("DOJO - contextMenu InspectItem " + ((inspectItem) ? "FOUND!" : "NOT FOUND!"));
                 }       
@@ -106,7 +106,7 @@ define([
                 }
 
                 //GFX
-                var inspectItemGFX = Firefox.$("fbDojo_menu_dojofirebugextension_inspect_GFX");
+                var inspectItemGFX = Firebug.GlobalUI.$("fbDojo_menu_dojofirebugextension_inspect_GFX");
                 if(FBTrace.DBG_DOJO_CONTEXTMENU) {
                     FBTrace.sysout("DOJO - contextMenu InspectItem GFX" + ((inspectItemGFX) ? "FOUND!" : "NOT FOUND!"));
                 }       
@@ -127,23 +127,23 @@ define([
                 var doc = event.target.ownerDocument;
                 var elt = doc.popupNode;
 
-                var inspectItem = Firefox.$("fbDojo_menu_dojofirebugextension_inspect");
+                var inspectItem = Firebug.GlobalUI.$("fbDojo_menu_dojofirebugextension_inspect");
                 if(!inspectItem) {
                     if(FBTrace.DBG_DOJO_CONTEXTMENU) {
                         FBTrace.sysout("DOJO - creating Dojo Inspect menu item: ", elt);
                     }
 
-                    var contextMenu = Firefox.$("contentAreaContextMenu"); 
+                    var contextMenu = Firebug.GlobalUI.$("contentAreaContextMenu"); 
                     var itemToCreate = { id: "fbDojo_menu_dojofirebugextension_inspect", label: UI.$STR("window.contextmenuitem.inspect"), nol10n: true, command: this.inspectFromContextMenu, hidden: true };
-                    inspectItem = Menu.createMenuItem(contextMenu, itemToCreate);
+                    inspectItem = Menu.createMenuItem(contextMenu, itemToCreate);                        
                 }
-                var gfxInspectItem = Firefox.$("fbDojo_menu_dojofirebugextension_inspect_GFX");
+                var gfxInspectItem = Firebug.GlobalUI.$("fbDojo_menu_dojofirebugextension_inspect_GFX");
                 if(!gfxInspectItem) {
                     if(FBTrace.DBG_DOJO_CONTEXTMENU) {
                         FBTrace.sysout("DOJO - creating Dojo Inspect GFX menu item: ", elt);
                     }
 
-                    var contextMenu = Firefox.$("contentAreaContextMenu"); 
+                    var contextMenu = Firebug.GlobalUI.$("contentAreaContextMenu"); 
                     var itemToCreateGFX = { id: "fbDojo_menu_dojofirebugextension_inspect_GFX", label: UI.$STR("window.contextmenuitem..gfx.inspect"), nol10n: true, command: this.inspectFromContextMenuGFX, hidden: true };
                     gfxInspectItem = Menu.createMenuItem(contextMenu, itemToCreateGFX);
                 }

@@ -226,10 +226,12 @@ DojoReps.DijitRep = domplate(FirebugReps.Obj,
             return;
         }
     
-        
+        var label = UI.$STRF("panel.Inspect_In_Panel", ["HTML"]);
+        var tooltiptext = UI.$STRF("panel.tip.Inspect_In_Panel", ["HTML"]);
+
         return [
             "-",
-            {label: UI.$STRF("InspectInTab", ["HTML"]), nol10n: true, command: Obj.bindFixed(this._inspectHtml, this, widget, context) }
+            {label: label, tooltiptext: tooltiptext, nol10n: true, command: Obj.bindFixed(this._inspectHtml, this, widget, context) }
         ];
     },
     

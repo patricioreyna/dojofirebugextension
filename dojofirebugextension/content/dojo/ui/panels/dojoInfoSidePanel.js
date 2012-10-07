@@ -97,6 +97,8 @@ DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
     },
 
     show: function(state) {
+        Firebug.Panel.show.apply(this, arguments);
+
         var ctx = DojoPanels._safeGetContext(this);
         this.showInfo(ctx);
         if (ctx.infoPanelCoutersRefreshEventsReg){
@@ -117,6 +119,8 @@ DojoInfoSidePanel.prototype = Obj.extend(Firebug.Panel,
         if (ctx.infoPanelCoutersRefreshEventsReg){
             ctx.infoPanelCoutersRefreshEventsReg.removeAllListeners();
         }
+        
+        Firebug.Panel.hide.apply(this, arguments);
     },
     
     _getCounterNode: function(counterId){ 

@@ -1,6 +1,6 @@
 <!ENTITY  dojo.about.label         "About">
 <!ENTITY  dojo.about.tooltip       "About Dojo Firebug Extension">
-
+ 
 <!ENTITY  dojo.connections.label         "All connections">
 <!ENTITY  dojo.connections.tooltip       "View all connections">
 

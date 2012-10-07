@@ -13,8 +13,8 @@
  */
 define([
         "firebug/firebug",
-        "firebug/firefox/firefox",
-        "firebug/firefox/window",
+        "firebug/chrome/firefox",
+        "firebug/chrome/window",
         "firebug/lib/dom",
         "firebug/lib/object",
         "firebug/lib/trace",
